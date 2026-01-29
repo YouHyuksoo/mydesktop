@@ -757,6 +757,8 @@
     .gradient-preview { background: linear-gradient(135deg, var(--accent), var(--accent-secondary)); }
     .dark-preview { background: rgba(0,0,0,0.6); }
     .neon-preview { background: #000; box-shadow: inset 0 0 8px var(--accent); }
+    .hermes-preview { background: linear-gradient(135deg, #f37021, #cf5a28, #8b4513); }
+    .cyberpunk-preview { background: linear-gradient(135deg, #ff00ff, #00ffff, #ff0080); }
 
     /* ===== Card Styles ===== */
     .shortcut-card.style-rainbow {
@@ -784,6 +786,30 @@
 
     .section-cards.active .shortcut-card.style-neon:hover {
       box-shadow: 0 0 30px var(--card-glow), inset 0 0 20px rgba(255,215,0,0.2), 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    .shortcut-card.style-hermes {
+      background: linear-gradient(145deg, rgba(243,112,33,0.2), rgba(139,69,19,0.15));
+      border: 1px solid rgba(243,112,33,0.4);
+      box-shadow: 0 4px 20px rgba(139,69,19,0.2);
+    }
+
+    .section-cards.active .shortcut-card.style-hermes:hover {
+      background: linear-gradient(145deg, rgba(243,112,33,0.3), rgba(207,90,40,0.2));
+      border-color: #f37021;
+      box-shadow: 0 0 30px rgba(243,112,33,0.4), 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    .shortcut-card.style-cyberpunk {
+      background: linear-gradient(145deg, rgba(255,0,128,0.15), rgba(0,255,255,0.1));
+      border: 1px solid rgba(255,0,255,0.3);
+      box-shadow: 0 0 15px rgba(255,0,128,0.2), 0 0 15px rgba(0,255,255,0.1);
+    }
+
+    .section-cards.active .shortcut-card.style-cyberpunk:hover {
+      background: linear-gradient(145deg, rgba(255,0,128,0.25), rgba(0,255,255,0.15));
+      border-color: #ff00ff;
+      box-shadow: 0 0 30px rgba(255,0,255,0.5), 0 0 30px rgba(0,255,255,0.3), 0 20px 40px rgba(0,0,0,0.3);
     }
 
     .settings-submenu-trigger {
@@ -1501,6 +1527,14 @@
       <span class="style-preview neon-preview"></span>
       <span>네온</span>
     </div>
+    <div class="card-style-option" data-style="hermes">
+      <span class="style-preview hermes-preview"></span>
+      <span>헤르메스</span>
+    </div>
+    <div class="card-style-option" data-style="cyberpunk">
+      <span class="style-preview cyberpunk-preview"></span>
+      <span>사이버펑크</span>
+    </div>
   </div>
 
   <div id="toast">복사됨!</div>
@@ -1616,7 +1650,7 @@
     let glowIntensity = 0;
     let glowTheme = 'gold';
     let iconColorMode = 'brand'; // 'brand' or 'white'
-    let cardStyle = 'glass'; // glass, rainbow, gradient, dark, neon
+    let cardStyle = 'glass'; // glass, rainbow, gradient, dark, neon, hermes, cyberpunk
 
     const GLOW_THEMES = {
       gold: {
@@ -2596,7 +2630,7 @@
       renderCards();
       hideCardStyleSubmenu();
       hideSettingsMenu();
-      const styleNames = { glass: '글래스', rainbow: '무지개', gradient: '그라데이션', dark: '다크', neon: '네온' };
+      const styleNames = { glass: '글래스', rainbow: '무지개', gradient: '그라데이션', dark: '다크', neon: '네온', hermes: '헤르메스', cyberpunk: '사이버펑크' };
       showToast(`🃏 ${styleNames[style]}`);
     }
 
