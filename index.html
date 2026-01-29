@@ -135,9 +135,10 @@
       bottom: 0;
       transform-style: preserve-3d;
       display: flex;
-      gap: 30px;
+      gap: 20px;
       justify-content: center;
       align-items: center;
+      align-content: center;
       flex-wrap: wrap;
       max-width: 800px;
       margin: auto;
@@ -1499,6 +1500,10 @@
   </div>
 
   <div id="settings-menu">
+    <div class="settings-item" id="menu-space">
+      <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></span>
+      <span id="space-type-label">공간: 클래식 터널</span>
+    </div>
     <div class="settings-item settings-submenu-trigger" id="menu-tunnel">
       <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 2L2 19h20L12 2zm0 4l6.5 11h-13L12 6z"/></svg></span>
       <span>터널 모양</span>
@@ -1752,15 +1757,24 @@
     // Three.js
     let scene, camera, renderer;
     let tunnelRings = [];
+    let starField = null; // 코스믹 워프용
+    let spaceType = 'tunnel'; // 'tunnel' 또는 'warp'
     const RING_COUNT = 40;
     const RING_SPACING = 50;
     const TUNNEL_LENGTH = RING_COUNT * RING_SPACING;
+    const STAR_COUNT = 3000; // 워프용 별 개수
+    const WARP_LIMIT = 2000; // 워프 공간 깊이
 
     function init() {
       loadShortcuts();
       loadSettings();
       initThreeJS();
-      createTunnel();
+      // 공간 타입에 따라 생성
+      if (spaceType === 'warp') {
+        createCosmicWarp();
+      } else {
+        createTunnel();
+      }
       createDepthIndicator();
       initColorPicker();
       renderCards();
@@ -1768,6 +1782,7 @@
       updateClock();
       setInterval(updateClock, 1000);
       initSystemInfo();
+      updateSpaceMenu();
       updateTunnelMenu();
       updateIconColorLabel();
       updateCardStyleMenu();
@@ -1806,11 +1821,12 @@
         glowTheme = settings.glowTheme || 'gold';
         iconColorMode = settings.iconColorMode || 'brand';
         cardStyle = settings.cardStyle || 'glass';
+        spaceType = settings.spaceType || 'tunnel';
       }
     }
 
     function saveSettings() {
-      localStorage.setItem('mydesktop-tunnel-settings', JSON.stringify({ tunnelShape, glowTheme, iconColorMode, cardStyle }));
+      localStorage.setItem('mydesktop-tunnel-settings', JSON.stringify({ tunnelShape, glowTheme, iconColorMode, cardStyle, spaceType }));
     }
 
     function applyGlowTheme(theme) {
@@ -1829,8 +1845,10 @@
         orb.style.background = `radial-gradient(circle, ${colors.orbs[i]} 0%, transparent 70%)`;
       });
 
-      // Three.js 터널 색상 업데이트
+      // Three.js 색상 업데이트
       const threeColor = new THREE.Color(colors.primary);
+
+      // 터널 링 색상
       tunnelRings.forEach(ring => {
         ring.material.color = threeColor;
       });
@@ -1841,6 +1859,11 @@
           child.material.color = threeColor;
         }
       });
+
+      // 코스믹 워프 별 색상 업데이트
+      if (starField) {
+        starField.material.color = threeColor;
+      }
 
       // 버튼 상태 업데이트
       document.querySelectorAll('.color-bar-btn').forEach(btn => {
@@ -1916,12 +1939,11 @@
     }
 
     function createTunnel() {
-      // 기존 터널 링 제거
-      tunnelRings.forEach(ring => scene.remove(ring));
-      tunnelRings = [];
+      // 기존 요소 제거
+      clearSpace();
 
-      // 기존 파티클 제거
-      scene.children.filter(c => c.userData.isParticle).forEach(p => scene.remove(p));
+      // 터널 모드용 fog
+      scene.fog = new THREE.Fog(0x050508, 100, 1500);
 
       const goldenColor = new THREE.Color(0xffd700);
 
@@ -1975,6 +1997,116 @@
       scene.add(particles);
     }
 
+    // 코스믹 워프 효과 생성
+    function createCosmicWarp() {
+      // 기존 터널/파티클 제거
+      clearSpace();
+
+      // 워프 모드용 fog 조정 (더 먼 거리)
+      scene.fog = new THREE.Fog(0x050508, 200, 2500);
+
+      const themeColor = new THREE.Color(GLOW_THEMES[glowTheme].primary);
+
+      // 별들 생성
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(STAR_COUNT * 3);
+      const sizes = new Float32Array(STAR_COUNT);
+
+      for (let i = 0; i < STAR_COUNT; i++) {
+        // 원통형 분포로 별 배치 (중앙은 비우고)
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 50 + Math.random() * 800;
+        positions[i * 3] = Math.cos(angle) * radius;
+        positions[i * 3 + 1] = Math.sin(angle) * radius;
+        positions[i * 3 + 2] = -Math.random() * WARP_LIMIT;
+        sizes[i] = 1 + Math.random() * 2;
+      }
+
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+      const material = new THREE.PointsMaterial({
+        color: themeColor,
+        size: 2,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending,
+        sizeAttenuation: true
+      });
+
+      starField = new THREE.Points(geometry, material);
+      starField.userData.isStarField = true;
+      scene.add(starField);
+
+      // 원거리 배경 별들 (고정)
+      const bgGeometry = new THREE.BufferGeometry();
+      const bgPositions = new Float32Array(500 * 3);
+      for (let i = 0; i < 500; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 200 + Math.random() * 1000;
+        bgPositions[i * 3] = Math.cos(angle) * radius;
+        bgPositions[i * 3 + 1] = Math.sin(angle) * radius;
+        bgPositions[i * 3 + 2] = -1500 - Math.random() * 500;
+      }
+      bgGeometry.setAttribute('position', new THREE.BufferAttribute(bgPositions, 3));
+
+      const bgMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 1,
+        transparent: true,
+        opacity: 0.3,
+        blending: THREE.AdditiveBlending
+      });
+
+      const bgStars = new THREE.Points(bgGeometry, bgMaterial);
+      bgStars.userData.isBackgroundStar = true;
+      scene.add(bgStars);
+    }
+
+    // 공간 클리어 함수
+    function clearSpace() {
+      // 터널 링 제거
+      tunnelRings.forEach(ring => scene.remove(ring));
+      tunnelRings = [];
+
+      // 파티클 제거
+      scene.children.filter(c => c.userData.isParticle).forEach(p => scene.remove(p));
+
+      // 별 필드 제거
+      if (starField) {
+        scene.remove(starField);
+        starField = null;
+      }
+
+      // 배경 별 제거
+      scene.children.filter(c => c.userData.isBackgroundStar).forEach(s => scene.remove(s));
+    }
+
+    // 공간 타입 변경
+    function changeSpaceType(type) {
+      spaceType = type;
+      saveSettings();
+
+      if (type === 'warp') {
+        createCosmicWarp();
+        showToast('🚀 코스믹 워프 모드');
+      } else {
+        createTunnel();
+        showToast('🔺 클래식 터널 모드');
+      }
+
+      // 색상 다시 적용
+      applyGlowTheme(glowTheme);
+      updateSpaceMenu();
+    }
+
+    function updateSpaceMenu() {
+      const label = document.getElementById('space-type-label');
+      if (label) {
+        label.textContent = spaceType === 'warp' ? '공간: 코스믹 워프' : '공간: 클래식 터널';
+      }
+    }
+
     function changeTunnelShape(shape) {
       tunnelShape = shape;
       saveSettings();
@@ -2005,12 +2137,27 @@
     function animate() {
       requestAnimationFrame(animate);
 
-      // 터널 속도 보간 (더 부드럽게)
+      // 속도 보간 (더 부드럽게)
       tunnelSpeed += (targetSpeed - tunnelSpeed) * 0.08;
 
       // 조명 강도 감쇠
       glowIntensity *= 0.95;
 
+      if (spaceType === 'warp') {
+        // ===== 코스믹 워프 애니메이션 =====
+        updateCosmicWarp();
+      } else {
+        // ===== 클래식 터널 애니메이션 =====
+        updateTunnelAnimation();
+      }
+
+      // 몽환적 조명 업데이트
+      updateAmbientGlow();
+
+      renderer.render(scene, camera);
+    }
+
+    function updateTunnelAnimation() {
       // 링 이동
       tunnelRings.forEach((ring, i) => {
         ring.position.z += tunnelSpeed;
@@ -2050,11 +2197,46 @@
           child.material.opacity = 0.5 + glowIntensity * 0.3;
         }
       });
+    }
 
-      // 몽환적 조명 업데이트
-      updateAmbientGlow();
+    function updateCosmicWarp() {
+      if (!starField) return;
 
-      renderer.render(scene, camera);
+      const positions = starField.geometry.attributes.position.array;
+      const speed = tunnelSpeed * 2; // 워프는 더 빠르게
+
+      // 속도에 따른 워프 스트레치 효과
+      const stretchFactor = Math.min(3, 1 + Math.abs(tunnelSpeed) * 0.1);
+
+      for (let i = 0; i < positions.length / 3; i++) {
+        positions[i * 3 + 2] += speed;
+
+        // 별이 카메라를 지나가면 뒤로 재배치
+        if (positions[i * 3 + 2] > 100) {
+          positions[i * 3 + 2] = -WARP_LIMIT + Math.random() * 100;
+          // 새 위치 랜덤화
+          const angle = Math.random() * Math.PI * 2;
+          const radius = 50 + Math.random() * 800;
+          positions[i * 3] = Math.cos(angle) * radius;
+          positions[i * 3 + 1] = Math.sin(angle) * radius;
+        }
+        if (positions[i * 3 + 2] < -WARP_LIMIT) {
+          positions[i * 3 + 2] = 50;
+        }
+      }
+
+      starField.geometry.attributes.position.needsUpdate = true;
+
+      // 워프 속도에 따른 별 크기 및 밝기 변화 (하이퍼드라이브 효과)
+      const baseSize = 2 + Math.abs(tunnelSpeed) * 0.15;
+      const baseOpacity = 0.6 + Math.abs(tunnelSpeed) * 0.02 + glowIntensity * 0.3;
+      starField.material.size = Math.min(6, baseSize);
+      starField.material.opacity = Math.min(1, baseOpacity);
+
+      // FOV 변화로 워프 느낌 강화
+      const targetFov = 75 + Math.abs(tunnelSpeed) * 1.5;
+      camera.fov += (targetFov - camera.fov) * 0.1;
+      camera.updateProjectionMatrix();
     }
 
     function updateAmbientGlow() {
@@ -2896,6 +3078,13 @@
       document.getElementById('menu-protocol').addEventListener('click', copyProtocolUrl);
       document.getElementById('menu-reset').addEventListener('click', resetShortcuts);
       document.getElementById('menu-icon-color').addEventListener('click', toggleIconColor);
+
+      // Space type 전환 (터널 ↔ 워프)
+      document.getElementById('menu-space').addEventListener('click', e => {
+        e.stopPropagation();
+        const newType = spaceType === 'tunnel' ? 'warp' : 'tunnel';
+        changeSpaceType(newType);
+      });
 
       // Tunnel submenu - 클릭으로만 열기/닫기
       document.getElementById('menu-tunnel').addEventListener('click', e => {
