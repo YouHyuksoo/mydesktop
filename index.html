@@ -610,6 +610,15 @@
 
     .settings-item .icon {
       font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.7;
+    }
+
+    .settings-item .icon svg {
+      width: 16px;
+      height: 16px;
     }
 
     .settings-divider {
@@ -1471,25 +1480,25 @@
 
   <div id="settings-menu">
     <div class="settings-item settings-submenu-trigger" id="menu-tunnel">
-      <span class="icon">◇</span>
+      <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 2L2 19h20L12 2zm0 4l6.5 11h-13L12 6z"/></svg></span>
       <span>터널 모양</span>
       <span class="submenu-arrow">›</span>
     </div>
     <div class="settings-item" id="menu-icon-color">
-      <span class="icon">🎨</span>
+      <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></span>
       <span id="icon-color-label">아이콘: 브랜드 색상</span>
     </div>
     <div class="settings-item settings-submenu-trigger" id="menu-card-style">
-      <span class="icon">🃏</span>
+      <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg></span>
       <span>카드 스타일</span>
       <span class="submenu-arrow">›</span>
     </div>
     <div class="settings-item" id="menu-protocol">
-      <span class="icon">🔗</span>
+      <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg></span>
       <span>프로토콜 핸들러 설정</span>
     </div>
     <div class="settings-item" id="menu-reset">
-      <span class="icon">🔄</span>
+      <span class="icon"><svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></span>
       <span>바로가기 초기화</span>
     </div>
     <div class="settings-divider"></div>
