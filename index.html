@@ -2733,11 +2733,11 @@
         const normalizedDepth = (depth + 1) / 2; // 0 ~ 1
 
         if (isMobile) {
-          // 모바일: 세로 캐러셀
-          y = Math.sin(angle) * radius * 0.8;
-          z = depth * 150; // 중앙이 앞으로 튀어나옴
-          scale = 0.65 + 0.35 * normalizedDepth;
-          opacity = 0.4 + 0.6 * normalizedDepth;
+          // 모바일: 세로 캐러셀 - 3장이 잘 보이도록
+          y = Math.sin(angle) * radius * 0.9; // 간격 넓힘
+          z = depth * 120; // 깊이감 줄여서 더 잘 보이게
+          scale = 0.75 + 0.25 * normalizedDepth; // 사이드 카드 더 크게 (0.75~1.0)
+          opacity = 0.65 + 0.35 * normalizedDepth; // 사이드 카드 더 밝게 (0.65~1.0)
         } else {
           // 데스크톱: 가로 캐러셀 - 정면에서 뒤로 좁아지는 형태
           x = Math.sin(angle) * radius;
@@ -3241,21 +3241,29 @@
       let touchStartY = 0;
       let touchStartX = 0;
       let touchStartTime = 0;
+      let touchOnCard = false; // 카드 위에서 터치 시작했는지
 
       document.addEventListener('touchstart', e => {
-        if (e.target.closest('.shortcut-card') ||
-            e.target.closest('.floating-btn') ||
+        // UI 요소 위에서는 무시
+        if (e.target.closest('.floating-btn') ||
             e.target.closest('#settings-menu') ||
             e.target.closest('#tunnel-submenu') ||
-            e.target.closest('.modal-overlay')) return;
+            e.target.closest('.modal-overlay') ||
+            e.target.closest('.carousel-dots')) return;
 
         touchStartY = e.touches[0].clientY;
         touchStartX = e.touches[0].clientX;
         touchStartTime = Date.now();
+
+        // 카드 위에서 터치 시작했는지 기록
+        touchOnCard = !!e.target.closest('.shortcut-card');
       }, { passive: true });
 
       document.addEventListener('touchmove', e => {
         if (touchStartY === 0) return;
+
+        // 카드 위에서 시작한 스와이프는 터널 효과 없음
+        if (touchOnCard) return;
 
         const deltaY = touchStartY - e.touches[0].clientY;
 
@@ -3274,32 +3282,35 @@
         const deltaTime = Date.now() - touchStartTime;
         const isMobile = window.innerWidth <= 768;
 
-        // 캐러셀 모드
-        if (cardLayout === 'carousel') {
-          if (isMobile) {
-            // 모바일 세로 캐러셀: 수직 스와이프
-            if (Math.abs(deltaY) > 50) {
-              if (deltaY > 0) carouselNext();
-              else carouselPrev();
-            }
-          } else {
-            // 데스크톱 가로 캐러셀: 수평 스와이프
-            if (Math.abs(deltaX) > 50) {
-              if (deltaX > 0) carouselNext();
-              else carouselPrev();
+        // 모바일 세로 캐러셀: 카드 위에서 스와이프만 캐러셀 이동
+        if (cardLayout === 'carousel' && isMobile) {
+          if (touchOnCard && Math.abs(deltaY) > 50) {
+            // 카드 위에서 세로 스와이프 → 캐러셀 이동
+            if (deltaY > 0) carouselNext();
+            else carouselPrev();
+          } else if (!touchOnCard && Math.abs(deltaY) > 50) {
+            // 카드 밖에서 세로 스와이프 → 섹션 이동
+            const velocity = Math.abs(deltaY) / deltaTime;
+            if (velocity > 0.3 || Math.abs(deltaY) > 100) {
+              if (deltaY > 0) goToSection(currentSection + 1);
+              else goToSection(currentSection - 1);
             }
           }
-        } else {
-          // 그리드 모드: 수직 스와이프로 섹션 이동
+        }
+        // 데스크톱 캐러셀: 가로 스와이프
+        else if (cardLayout === 'carousel' && !isMobile) {
+          if (Math.abs(deltaX) > 50) {
+            if (deltaX > 0) carouselNext();
+            else carouselPrev();
+          }
+        }
+        // 그리드 모드: 수직 스와이프로 섹션 이동
+        else if (cardLayout === 'grid') {
           if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 50) {
             const velocity = Math.abs(deltaY) / deltaTime;
-
             if (velocity > 0.3 || Math.abs(deltaY) > 100) {
-              if (deltaY > 0) {
-                goToSection(currentSection + 1);
-              } else {
-                goToSection(currentSection - 1);
-              }
+              if (deltaY > 0) goToSection(currentSection + 1);
+              else goToSection(currentSection - 1);
             }
           }
         }
@@ -3307,6 +3318,7 @@
         // 리셋
         touchStartY = 0;
         touchStartX = 0;
+        touchOnCard = false;
         targetSpeed = 0;
       }, { passive: true });
 
