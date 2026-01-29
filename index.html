@@ -1104,10 +1104,14 @@
 
     /* ===== Responsive ===== */
     @media (max-width: 768px) {
-      .shortcut-card { width: 120px; height: 150px; }
-      .shortcut-icon { width: 44px; height: 44px; font-size: 18px; }
-      #section-title { font-size: 32px; }
-      .section-cards { gap: 15px; max-width: 500px; }
+      .shortcut-card { width: 100px; height: 130px; padding: 12px; }
+      .shortcut-icon { width: 36px; height: 36px; font-size: 16px; }
+      .shortcut-icon img, .shortcut-icon svg { width: 28px; height: 28px; }
+      .shortcut-title { font-size: 11px; }
+      .shortcut-url { font-size: 8px; }
+      #section-title { font-size: 24px; letter-spacing: 4px; }
+      #section-subtitle { font-size: 10px; }
+      .section-cards { gap: 12px; max-width: 400px; }
 
       /* 시스템 위젯 축소 */
       #system-widget {
@@ -1118,27 +1122,85 @@
       }
 
       #clock-widget {
-        padding: 10px 14px;
+        padding: 8px 12px;
       }
 
       #clock-widget .time {
-        font-size: 22px;
+        font-size: 20px;
       }
+
+      #clock-widget .date {
+        font-size: 9px;
+      }
+
+      .card-actions { display: none; }
     }
 
     @media (max-width: 480px) {
       /* 더 작은 화면 */
+      .shortcut-card { width: 80px; height: 105px; padding: 10px; border-radius: 14px; }
+      .shortcut-icon { width: 30px; height: 30px; }
+      .shortcut-icon img, .shortcut-icon svg { width: 24px; height: 24px; }
+      .shortcut-title { font-size: 10px; }
+      .shortcut-url { display: none; }
+      #section-title { font-size: 18px; letter-spacing: 2px; }
+      #section-subtitle { font-size: 9px; letter-spacing: 1px; }
+      #section-info { top: 30px; }
+      .section-cards { gap: 10px; max-width: 320px; }
+
       #system-widget {
         display: none;
       }
 
+      #clock-widget {
+        padding: 6px 10px;
+        top: 10px;
+        left: 10px;
+      }
+
+      #clock-widget .time {
+        font-size: 16px;
+      }
+
       #scroll-hint {
-        bottom: 20px;
+        bottom: 15px;
+        font-size: 10px;
+      }
+
+      #scroll-hint .mouse {
+        width: 18px;
+        height: 30px;
       }
 
       .color-bar-btn {
-        width: 14px;
-        height: 14px;
+        width: 12px;
+        height: 12px;
+      }
+
+      #color-bar {
+        padding: 8px 5px;
+        gap: 6px;
+      }
+
+      .depth-dot {
+        width: 10px;
+        height: 10px;
+      }
+
+      #depth-indicator {
+        right: 15px;
+        gap: 10px;
+      }
+
+      .bottom-buttons {
+        bottom: 15px;
+        right: 15px;
+      }
+
+      .floating-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
       }
     }
   </style>
