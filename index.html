@@ -701,6 +701,91 @@
       text-align: center;
     }
 
+    /* ===== Card Style Submenu ===== */
+    #card-style-submenu {
+      position: fixed;
+      bottom: 100px;
+      right: 260px;
+      background: rgba(10, 10, 15, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      border-radius: 16px;
+      padding: 8px 0;
+      min-width: 140px;
+      z-index: 201;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(10px);
+      transition: all 0.3s ease;
+    }
+
+    #card-style-submenu.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+    }
+
+    .card-style-option {
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .card-style-option:hover {
+      background: rgba(255, 215, 0, 0.1);
+    }
+
+    .card-style-option.active::after {
+      content: '✓';
+      margin-left: auto;
+      color: var(--accent);
+    }
+
+    .style-preview {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .glass-preview { background: rgba(255,255,255,0.1); }
+    .rainbow-preview { background: linear-gradient(135deg, #ff6b6b, #ffd700, #4ecdc4, #45b7d1, #a55eea); }
+    .gradient-preview { background: linear-gradient(135deg, var(--accent), var(--accent-secondary)); }
+    .dark-preview { background: rgba(0,0,0,0.6); }
+    .neon-preview { background: #000; box-shadow: inset 0 0 8px var(--accent); }
+
+    /* ===== Card Styles ===== */
+    .shortcut-card.style-rainbow {
+      background: linear-gradient(135deg,
+        rgba(var(--rainbow-r), var(--rainbow-g), var(--rainbow-b), 0.25),
+        rgba(var(--rainbow-r), var(--rainbow-g), var(--rainbow-b), 0.1));
+      border-color: rgba(var(--rainbow-r), var(--rainbow-g), var(--rainbow-b), 0.4);
+    }
+
+    .shortcut-card.style-gradient {
+      background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,140,0,0.1));
+      border-color: rgba(255,215,0,0.3);
+    }
+
+    .shortcut-card.style-dark {
+      background: rgba(0,0,0,0.5);
+      border-color: rgba(255,255,255,0.1);
+    }
+
+    .shortcut-card.style-neon {
+      background: rgba(0,0,0,0.7);
+      border: 1px solid var(--accent);
+      box-shadow: 0 0 15px var(--card-glow), inset 0 0 15px rgba(255,215,0,0.1);
+    }
+
+    .section-cards.active .shortcut-card.style-neon:hover {
+      box-shadow: 0 0 30px var(--card-glow), inset 0 0 20px rgba(255,215,0,0.2), 0 20px 40px rgba(0,0,0,0.3);
+    }
+
     .settings-submenu-trigger {
       position: relative;
     }
@@ -1347,6 +1432,11 @@
       <span class="icon">🎨</span>
       <span id="icon-color-label">아이콘: 브랜드 색상</span>
     </div>
+    <div class="settings-item settings-submenu-trigger" id="menu-card-style">
+      <span class="icon">🃏</span>
+      <span>카드 스타일</span>
+      <span class="submenu-arrow">›</span>
+    </div>
     <div class="settings-item" id="menu-protocol">
       <span class="icon">🔗</span>
       <span>프로토콜 핸들러 설정</span>
@@ -1387,6 +1477,29 @@
     <div class="tunnel-option" data-shape="infinity">
       <span class="shape-icon">∞</span>
       <span>무한</span>
+    </div>
+  </div>
+
+  <div id="card-style-submenu">
+    <div class="card-style-option" data-style="glass">
+      <span class="style-preview glass-preview"></span>
+      <span>글래스</span>
+    </div>
+    <div class="card-style-option" data-style="rainbow">
+      <span class="style-preview rainbow-preview"></span>
+      <span>무지개</span>
+    </div>
+    <div class="card-style-option" data-style="gradient">
+      <span class="style-preview gradient-preview"></span>
+      <span>그라데이션</span>
+    </div>
+    <div class="card-style-option" data-style="dark">
+      <span class="style-preview dark-preview"></span>
+      <span>다크</span>
+    </div>
+    <div class="card-style-option" data-style="neon">
+      <span class="style-preview neon-preview"></span>
+      <span>네온</span>
     </div>
   </div>
 
@@ -1503,6 +1616,7 @@
     let glowIntensity = 0;
     let glowTheme = 'gold';
     let iconColorMode = 'brand'; // 'brand' or 'white'
+    let cardStyle = 'glass'; // glass, rainbow, gradient, dark, neon
 
     const GLOW_THEMES = {
       gold: {
@@ -1568,6 +1682,7 @@
       initSystemInfo();
       updateTunnelMenu();
       updateIconColorLabel();
+      updateCardStyleMenu();
       applyGlowTheme(glowTheme);
       animate();
 
@@ -1602,11 +1717,12 @@
         tunnelShape = settings.tunnelShape || 'triangle';
         glowTheme = settings.glowTheme || 'gold';
         iconColorMode = settings.iconColorMode || 'brand';
+        cardStyle = settings.cardStyle || 'glass';
       }
     }
 
     function saveSettings() {
-      localStorage.setItem('mydesktop-tunnel-settings', JSON.stringify({ tunnelShape, glowTheme, iconColorMode }));
+      localStorage.setItem('mydesktop-tunnel-settings', JSON.stringify({ tunnelShape, glowTheme, iconColorMode, cardStyle }));
     }
 
     function applyGlowTheme(theme) {
@@ -2018,7 +2134,7 @@
 
         const sectionShortcuts = shortcuts.filter(s => s.layer === sectionIndex);
         sectionShortcuts.forEach((shortcut, i) => {
-          const card = createCard(shortcut);
+          const card = createCard(shortcut, i);
           sectionDiv.appendChild(card);
         });
 
@@ -2028,9 +2144,30 @@
       updateCardsDepth();
     }
 
-    function createCard(shortcut) {
+    const RAINBOW_COLORS = [
+      { r: 255, g: 107, b: 107 },  // red
+      { r: 255, g: 159, b: 67 },   // orange
+      { r: 255, g: 215, b: 0 },    // yellow
+      { r: 78, g: 205, b: 196 },   // teal
+      { r: 69, g: 183, b: 209 },   // blue
+      { r: 165, g: 94, b: 234 },   // purple
+      { r: 255, g: 107, b: 182 },  // pink
+      { r: 38, g: 222, b: 129 },   // green
+    ];
+
+    function createCard(shortcut, index = 0) {
       const card = document.createElement('div');
       card.className = 'shortcut-card';
+      if (cardStyle !== 'glass') {
+        card.classList.add('style-' + cardStyle);
+      }
+      // 무지개 색상 적용
+      if (cardStyle === 'rainbow') {
+        const color = RAINBOW_COLORS[index % RAINBOW_COLORS.length];
+        card.style.setProperty('--rainbow-r', color.r);
+        card.style.setProperty('--rainbow-g', color.g);
+        card.style.setProperty('--rainbow-b', color.b);
+      }
       card.dataset.id = shortcut.id;
 
       const iconContent = getIconContent(shortcut);
@@ -2452,6 +2589,35 @@
       label.textContent = iconColorMode === 'brand' ? '아이콘: 브랜드 색상' : '아이콘: 흰색';
     }
 
+    function changeCardStyle(style) {
+      cardStyle = style;
+      saveSettings();
+      updateCardStyleMenu();
+      renderCards();
+      hideCardStyleSubmenu();
+      hideSettingsMenu();
+      const styleNames = { glass: '글래스', rainbow: '무지개', gradient: '그라데이션', dark: '다크', neon: '네온' };
+      showToast(`🃏 ${styleNames[style]}`);
+    }
+
+    function updateCardStyleMenu() {
+      document.querySelectorAll('.card-style-option').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.style === cardStyle);
+      });
+    }
+
+    function showCardStyleSubmenu() {
+      document.getElementById('card-style-submenu').classList.add('active');
+    }
+
+    function hideCardStyleSubmenu() {
+      document.getElementById('card-style-submenu').classList.remove('active');
+    }
+
+    function toggleCardStyleSubmenu() {
+      document.getElementById('card-style-submenu').classList.toggle('active');
+    }
+
     // Entrance Animation
     function animateEntrance() {
       gsap.fromTo('#section-info',
@@ -2658,10 +2824,29 @@
         });
       });
 
+      // Card style submenu
+      document.getElementById('menu-card-style').addEventListener('click', e => {
+        e.stopPropagation();
+        toggleCardStyleSubmenu();
+        hideTunnelSubmenu();
+      });
+      document.getElementById('menu-card-style').addEventListener('mouseenter', () => {
+        showCardStyleSubmenu();
+        hideTunnelSubmenu();
+      });
+
+      document.querySelectorAll('.card-style-option').forEach(opt => {
+        opt.addEventListener('click', e => {
+          e.stopPropagation();
+          changeCardStyle(opt.dataset.style);
+        });
+      });
+
       document.addEventListener('click', e => {
-        if (!e.target.closest('#settings-menu') && !e.target.closest('#settings-btn') && !e.target.closest('#tunnel-submenu')) {
+        if (!e.target.closest('#settings-menu') && !e.target.closest('#settings-btn') && !e.target.closest('#tunnel-submenu') && !e.target.closest('#card-style-submenu')) {
           hideSettingsMenu();
           hideTunnelSubmenu();
+          hideCardStyleSubmenu();
         }
       });
 
