@@ -2726,14 +2726,14 @@
         if (isMobile) {
           // 모바일: 세로 캐러셀
           y = Math.sin(angle) * radius * 0.8;
-          z = (depth - 1) * 150;
+          z = depth * 150; // 중앙이 앞으로 튀어나옴
           scale = 0.65 + 0.35 * normalizedDepth;
           opacity = 0.4 + 0.6 * normalizedDepth;
         } else {
-          // 데스크톱: 가로 캐러셀
+          // 데스크톱: 가로 캐러셀 - 정면에서 뒤로 좁아지는 형태
           x = Math.sin(angle) * radius;
-          z = (depth - 1) * 200;
-          rotateY = -angle * (180 / Math.PI) * 0.5; // 회전 각도 줄임
+          z = depth * 200; // 중앙(depth=1)이 앞으로, 양쪽(depth<1)이 뒤로
+          rotateY = -angle * (180 / Math.PI) * 0.5;
           scale = 0.7 + 0.3 * normalizedDepth;
           opacity = 0.5 + 0.5 * normalizedDepth;
         }
