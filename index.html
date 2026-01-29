@@ -1,0 +1,2685 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyDesktop - 3D Tunnel Navigation</title>
+  <style>
+    :root {
+      --bg-primary: #050508;
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.6);
+      --accent: #ffd700;
+      --accent-secondary: #ff8c00;
+      --border: rgba(255, 215, 0, 0.2);
+      --card-glow: rgba(255, 215, 0, 0.4);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #canvas-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* 몽환적인 조명 효과 */
+    #ambient-glow {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
+    }
+
+    .glow-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      mix-blend-mode: screen;
+      transition: all 0.5s ease;
+    }
+
+    .glow-orb.orb-1 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, transparent 70%);
+      top: 20%;
+      left: 10%;
+    }
+
+    .glow-orb.orb-2 {
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, rgba(255, 140, 0, 0.3) 0%, transparent 70%);
+      top: 60%;
+      right: 10%;
+    }
+
+    .glow-orb.orb-3 {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(255, 100, 100, 0.25) 0%, transparent 70%);
+      bottom: 10%;
+      left: 30%;
+    }
+
+    .glow-orb.orb-4 {
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(100, 200, 255, 0.2) 0%, transparent 70%);
+      top: 10%;
+      right: 25%;
+    }
+
+
+    /* ===== Current Section Info ===== */
+    #section-info {
+      position: fixed;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 200;
+    }
+
+    #section-title {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow: 0 0 30px var(--card-glow), 0 0 60px var(--card-glow);
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    #section-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      letter-spacing: 4px;
+    }
+
+    /* ===== 3D Cards Space ===== */
+    #cards-3d-space {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      perspective: 1200px;
+      perspective-origin: 50% 50%;
+      z-index: 10;
+    }
+
+    .section-cards {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      transform-style: preserve-3d;
+      display: flex;
+      gap: 30px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      pointer-events: none;
+    }
+
+    .shortcut-card {
+      --card-color: var(--accent);
+      width: 140px;
+      height: 180px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 20px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: var(--text-primary);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-style: preserve-3d;
+      pointer-events: auto;
+    }
+
+    .section-cards.active .shortcut-card:hover {
+      transform: scale(1.15) translateZ(50px);
+      box-shadow: 0 0 40px color-mix(in srgb, var(--card-color) 50%, transparent),
+                  0 20px 40px rgba(0,0,0,0.3);
+      border-color: var(--card-color);
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* 카드 클릭 효과 */
+    .shortcut-card.pressing {
+      transform: scale(0.92) translateZ(-20px) !important;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.2), inset 0 0 30px rgba(0,0,0,0.3) !important;
+      transition: all 0.1s ease !important;
+    }
+
+    .shortcut-card.opening {
+      pointer-events: none;
+    }
+
+    .shortcut-card.opening::after {
+      content: '여는 중...';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--accent);
+      letter-spacing: 1px;
+      animation: openingPulse 0.8s ease-in-out infinite;
+    }
+
+    @keyframes openingPulse {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+    }
+
+    /* 카드에 로딩 스피너 */
+    .shortcut-card.opening .shortcut-icon::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 30px;
+      height: 30px;
+      margin: -15px 0 0 -15px;
+      border: 2px solid transparent;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    .shortcut-icon {
+      position: relative;
+    }
+
+    /* 뒤 섹션 카드 스타일 - 더 눈에 띄게 */
+    .section-cards:not(.active) .shortcut-card {
+      border-color: rgba(255, 215, 0, 0.15);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.05);
+    }
+
+    /* 섹션 라벨 표시 - 뒤 공간에 어떤 섹션인지 표시 */
+    .section-cards::before {
+      content: attr(data-label);
+      position: fixed;
+      top: calc(50% - 150px);
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 4px;
+      opacity: 0;
+      text-transform: uppercase;
+      white-space: nowrap;
+      text-shadow: 0 0 20px var(--card-glow);
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .section-cards:not(.active)::before {
+      opacity: 0.5;
+    }
+
+    .shortcut-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: white;
+      font-weight: bold;
+      background: transparent !important;
+    }
+
+    .shortcut-icon img {
+      width: 36px;
+      height: 36px;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+    }
+
+    .shortcut-icon svg {
+      width: 36px;
+      height: 36px;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+    }
+
+    .shortcut-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .shortcut-url {
+      font-size: 9px;
+      color: var(--text-secondary);
+    }
+
+    /* 카드 수정/삭제 버튼 - 미니멀 스타일 */
+    .card-actions {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      display: flex;
+      gap: 6px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .shortcut-card:hover .card-actions {
+      opacity: 1;
+    }
+
+    .card-btn {
+      width: 22px;
+      height: 22px;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      padding: 0;
+    }
+
+    .card-btn svg {
+      width: 14px;
+      height: 14px;
+      fill: rgba(255, 255, 255, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    .card-btn:hover svg {
+      fill: rgba(255, 255, 255, 0.9);
+      transform: scale(1.15);
+    }
+
+    .delete-btn:hover svg {
+      fill: #ff6b6b;
+    }
+
+    .shortcut-card {
+      position: relative;
+    }
+
+    /* ===== Depth Indicator ===== */
+    #depth-indicator {
+      position: fixed;
+      right: 30px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      z-index: 200;
+    }
+
+    .depth-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(255, 215, 0, 0.2);
+      border: 2px solid rgba(255, 215, 0, 0.4);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .depth-dot::after {
+      content: attr(data-label);
+      position: absolute;
+      right: 30px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .depth-dot:hover::after { opacity: 1; }
+
+    .depth-dot.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--card-glow);
+      transform: scale(1.4);
+    }
+
+    /* ===== Scroll Hint ===== */
+    #scroll-hint {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      color: var(--accent);
+      font-size: 12px;
+      letter-spacing: 2px;
+      z-index: 200;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    #scroll-hint .mouse {
+      width: 24px;
+      height: 40px;
+      border: 2px solid var(--accent);
+      border-radius: 12px;
+      position: relative;
+    }
+
+    #scroll-hint .mouse::before {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 2px;
+      animation: scrollWheel 1.5s ease-in-out infinite;
+    }
+
+    @keyframes scrollWheel {
+      0%, 100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+      50% { transform: translateX(-50%) translateY(10px); opacity: 0; }
+    }
+
+    /* ===== Widget ===== */
+    #clock-widget {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 215, 0, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 215, 0, 0.2);
+      border-radius: 16px;
+      padding: 15px 20px;
+      z-index: 200;
+    }
+
+    #clock-widget .time {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    #clock-widget .date {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* ===== System Widget ===== */
+    #system-widget {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 215, 0, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 215, 0, 0.2);
+      border-radius: 16px;
+      padding: 12px 16px;
+      z-index: 200;
+      font-size: 11px;
+    }
+
+    .system-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .system-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .system-icon {
+      width: 16px;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    .system-label {
+      color: var(--text-secondary);
+      width: 45px;
+    }
+
+    .system-value {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .system-bar {
+      width: 60px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .system-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    .battery-charging .system-icon {
+      animation: batteryPulse 1s ease-in-out infinite;
+    }
+
+    @keyframes batteryPulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+
+    /* ===== Bottom Buttons ===== */
+    .bottom-buttons {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      display: flex;
+      gap: 12px;
+      z-index: 200;
+    }
+
+    .floating-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 4px 30px var(--card-glow);
+      transition: all 0.3s ease;
+    }
+
+    #add-btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+      color: #000;
+      font-size: 28px;
+    }
+
+    #add-btn:hover {
+      transform: scale(1.1) rotate(90deg);
+    }
+
+    #settings-btn {
+      background: rgba(255, 215, 0, 0.1);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      color: var(--accent);
+    }
+
+    #settings-btn:hover {
+      transform: scale(1.1);
+      background: rgba(255, 215, 0, 0.2);
+    }
+
+    /* ===== Settings Menu ===== */
+    #settings-menu {
+      position: fixed;
+      bottom: 100px;
+      right: 30px;
+      background: rgba(10, 10, 15, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      border-radius: 16px;
+      padding: 12px 0;
+      min-width: 220px;
+      z-index: 200;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+    }
+
+    #settings-menu.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .settings-item {
+      padding: 12px 20px;
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .settings-item:hover {
+      background: rgba(255, 215, 0, 0.1);
+    }
+
+    .settings-item .icon {
+      font-size: 16px;
+    }
+
+    /* ===== Tunnel Submenu ===== */
+    #tunnel-submenu {
+      position: fixed;
+      bottom: 100px;
+      right: 260px;
+      background: rgba(10, 10, 15, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      border-radius: 16px;
+      padding: 8px 0;
+      min-width: 140px;
+      z-index: 201;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(10px);
+      transition: all 0.3s ease;
+    }
+
+    #tunnel-submenu.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+    }
+
+    .tunnel-option {
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .tunnel-option:hover {
+      background: rgba(255, 215, 0, 0.1);
+    }
+
+    .tunnel-option.active {
+      color: var(--accent);
+    }
+
+    .tunnel-option.active::after {
+      content: '✓';
+      margin-left: auto;
+      color: var(--accent);
+    }
+
+    .shape-icon {
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+    }
+
+    .settings-submenu-trigger {
+      position: relative;
+    }
+
+    .submenu-arrow {
+      margin-left: auto;
+      opacity: 0.5;
+    }
+
+    /* ===== Color Bar ===== */
+    #color-bar {
+      position: fixed;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      background: rgba(10, 10, 15, 0.5);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 10px 6px;
+      z-index: 200;
+    }
+
+    #color-bar-label {
+      font-size: 8px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+      opacity: 0.6;
+    }
+
+    .color-bar-options {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .color-bar-btn {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .color-bar-btn:hover {
+      transform: scale(1.3);
+    }
+
+    .color-bar-btn.active {
+      border-color: white;
+      box-shadow: 0 0 10px currentColor;
+    }
+
+    .color-bar-btn.gold { background: linear-gradient(135deg, #ffd700, #ff8c00); }
+    .color-bar-btn.purple { background: linear-gradient(135deg, #a855f7, #6366f1); }
+    .color-bar-btn.cyan { background: linear-gradient(135deg, #22d3ee, #06b6d4); }
+    .color-bar-btn.pink { background: linear-gradient(135deg, #f472b6, #ec4899); }
+    .color-bar-btn.green { background: linear-gradient(135deg, #4ade80, #22c55e); }
+    .color-bar-btn.red { background: linear-gradient(135deg, #f87171, #ef4444); }
+    .color-bar-btn.blue { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+    .color-bar-btn.white { background: linear-gradient(135deg, #f8fafc, #cbd5e1); }
+
+    /* ===== Click Ripple Effect ===== */
+    .click-ripple {
+      position: fixed;
+      pointer-events: none;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0.8;
+      z-index: 5;
+      animation: rippleExpand 1s ease-out forwards;
+    }
+
+    @keyframes rippleExpand {
+      0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0.8;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0;
+      }
+    }
+
+    .click-burst {
+      position: fixed;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .burst-particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent);
+    }
+
+    /* ===== Meteor Effect ===== */
+    .meteor {
+      position: fixed;
+      pointer-events: none;
+      z-index: 15;
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow:
+        0 0 10px var(--accent),
+        0 0 20px var(--accent),
+        0 0 40px var(--accent);
+    }
+
+    .meteor::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: 100%;
+      transform: translateY(-50%);
+      width: 80px;
+      height: 3px;
+      background: linear-gradient(to left, var(--accent), transparent);
+      border-radius: 2px;
+    }
+
+    .meteor::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      right: 100%;
+      transform: translateY(-50%);
+      width: 150px;
+      height: 1px;
+      background: linear-gradient(to left, var(--accent-secondary), transparent);
+      opacity: 0.5;
+    }
+
+    /* 카드 흔들림 효과 */
+    @keyframes cardShake {
+      0%, 100% { transform: translateX(0) rotate(0deg); }
+      10% { transform: translateX(-8px) rotate(-2deg); }
+      20% { transform: translateX(8px) rotate(2deg); }
+      30% { transform: translateX(-6px) rotate(-1.5deg); }
+      40% { transform: translateX(6px) rotate(1.5deg); }
+      50% { transform: translateX(-4px) rotate(-1deg); }
+      60% { transform: translateX(4px) rotate(1deg); }
+      70% { transform: translateX(-2px) rotate(-0.5deg); }
+      80% { transform: translateX(2px) rotate(0.5deg); }
+      90% { transform: translateX(-1px) rotate(0deg); }
+    }
+
+    .shortcut-card.shake {
+      animation: cardShake 0.6s ease-out;
+    }
+
+    /* 충돌 스파크 */
+    .impact-spark {
+      position: fixed;
+      pointer-events: none;
+      z-index: 16;
+    }
+
+    .spark-particle {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--accent);
+    }
+
+    /* ===== Toast ===== */
+    #toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(255, 215, 0, 0.9);
+      color: #000;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      z-index: 2000;
+    }
+
+    #toast.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ===== Context Menu ===== */
+    #context-menu {
+      position: fixed;
+      background: rgba(10, 10, 15, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      border-radius: 12px;
+      padding: 8px 0;
+      min-width: 150px;
+      z-index: 2000;
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(0.9);
+      transition: all 0.2s ease;
+    }
+
+    #context-menu.active {
+      opacity: 1;
+      visibility: visible;
+      transform: scale(1);
+    }
+
+    .context-item {
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+
+    .context-item:hover { background: rgba(255, 215, 0, 0.1); }
+    .context-item.danger { color: #ff4757; }
+
+    /* ===== Modal ===== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: #0a0a10;
+      border-radius: 24px;
+      padding: 30px;
+      width: 90%;
+      max-width: 400px;
+      border: 1px solid rgba(255, 215, 0, 0.2);
+      transform: scale(0.9);
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active .modal {
+      transform: scale(1);
+    }
+
+    .modal-title {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--accent);
+    }
+
+    .modal-field {
+      margin-bottom: 15px;
+    }
+
+    .modal-field label {
+      display: block;
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .modal-field input, .modal-field select {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid rgba(255, 215, 0, 0.2);
+      border-radius: 12px;
+      background: rgba(255, 215, 0, 0.05);
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .modal-field select option {
+      background: #1a1a20;
+      color: var(--text-primary);
+    }
+
+    .modal-field input:focus, .modal-field select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .color-picker-wrapper {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .color-option {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .color-option:hover { transform: scale(1.15); }
+    .color-option.selected { border-color: white; }
+
+    .icon-help {
+      margin-top: 6px;
+    }
+
+    .icon-help small {
+      color: var(--text-secondary);
+      font-size: 11px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .modal-btn.primary {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .modal-btn.secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+    }
+
+    .modal-btn.danger {
+      background: #ff4757;
+      color: white;
+    }
+
+    /* ===== Loading ===== */
+    #loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #050508;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loading-ring {
+      width: 60px;
+      height: 60px;
+      border: 3px solid rgba(255, 215, 0, 0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 768px) {
+      .shortcut-card { width: 120px; height: 150px; }
+      .shortcut-icon { width: 44px; height: 44px; font-size: 18px; }
+      #section-title { font-size: 32px; }
+      .section-cards { gap: 15px; max-width: 500px; }
+
+      /* 시스템 위젯 축소 */
+      #system-widget {
+        padding: 8px 12px;
+        font-size: 10px;
+        top: 15px;
+        right: 15px;
+      }
+
+      #clock-widget {
+        padding: 10px 14px;
+      }
+
+      #clock-widget .time {
+        font-size: 22px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      /* 더 작은 화면 */
+      #system-widget {
+        display: none;
+      }
+
+      #scroll-hint {
+        bottom: 20px;
+      }
+
+      .color-bar-btn {
+        width: 14px;
+        height: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="loading-screen">
+    <div class="loading-ring"></div>
+  </div>
+
+  <!-- 몽환적인 조명 -->
+  <div id="ambient-glow">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+    <div class="glow-orb orb-4"></div>
+  </div>
+
+  <div id="canvas-container"></div>
+
+  <div id="cards-3d-space"></div>
+
+  <div id="section-info">
+    <div id="section-title">FAVORITES</div>
+    <div id="section-subtitle">Your most used sites</div>
+  </div>
+
+  <div id="clock-widget">
+    <div class="time" id="clock-time">00:00</div>
+    <div class="date" id="clock-date">Loading...</div>
+  </div>
+
+  <div id="system-widget">
+    <div class="system-row" id="battery-row">
+      <span class="system-icon">🔋</span>
+      <span class="system-label">Battery</span>
+      <div class="system-bar"><div class="system-bar-fill" id="battery-bar"></div></div>
+      <span class="system-value" id="battery-value">--%</span>
+    </div>
+    <div class="system-row">
+      <span class="system-icon">⚡</span>
+      <span class="system-label">Cores</span>
+      <span class="system-value" id="cores-value">--</span>
+    </div>
+    <div class="system-row" id="network-row">
+      <span class="system-icon">📶</span>
+      <span class="system-label">Network</span>
+      <span class="system-value" id="network-value">--</span>
+    </div>
+    <div class="system-row" id="memory-row">
+      <span class="system-icon">📊</span>
+      <span class="system-label">JS Heap</span>
+      <div class="system-bar"><div class="system-bar-fill" id="memory-bar"></div></div>
+      <span class="system-value" id="memory-value">--MB</span>
+    </div>
+  </div>
+
+  <div id="depth-indicator"></div>
+
+  <div id="scroll-hint">
+    <div class="mouse"></div>
+    <span>SCROLL TO TRAVEL</span>
+  </div>
+
+  <div id="color-bar">
+    <span id="color-bar-label">Glow</span>
+    <div class="color-bar-options">
+      <button class="color-bar-btn gold active" data-theme="gold" title="Gold"></button>
+      <button class="color-bar-btn purple" data-theme="purple" title="Purple"></button>
+      <button class="color-bar-btn cyan" data-theme="cyan" title="Cyan"></button>
+      <button class="color-bar-btn pink" data-theme="pink" title="Pink"></button>
+      <button class="color-bar-btn green" data-theme="green" title="Green"></button>
+      <button class="color-bar-btn red" data-theme="red" title="Red"></button>
+      <button class="color-bar-btn blue" data-theme="blue" title="Blue"></button>
+      <button class="color-bar-btn white" data-theme="white" title="White"></button>
+    </div>
+  </div>
+
+  <div class="bottom-buttons">
+    <button class="floating-btn" id="settings-btn">⚙️</button>
+    <button class="floating-btn" id="add-btn">+</button>
+  </div>
+
+  <div id="settings-menu">
+    <div class="settings-item settings-submenu-trigger" id="menu-tunnel">
+      <span class="icon">◇</span>
+      <span>터널 모양</span>
+      <span class="submenu-arrow">›</span>
+    </div>
+    <div class="settings-item" id="menu-icon-color">
+      <span class="icon">🎨</span>
+      <span id="icon-color-label">아이콘: 브랜드 색상</span>
+    </div>
+    <div class="settings-item" id="menu-protocol">
+      <span class="icon">🔗</span>
+      <span>프로토콜 핸들러 설정</span>
+    </div>
+    <div class="settings-item" id="menu-reset">
+      <span class="icon">🔄</span>
+      <span>바로가기 초기화</span>
+    </div>
+  </div>
+
+  <div id="tunnel-submenu">
+    <div class="tunnel-option" data-shape="triangle">
+      <span class="shape-icon">△</span>
+      <span>삼각형</span>
+    </div>
+    <div class="tunnel-option" data-shape="circle">
+      <span class="shape-icon">○</span>
+      <span>원형</span>
+    </div>
+    <div class="tunnel-option" data-shape="square">
+      <span class="shape-icon">□</span>
+      <span>사각형</span>
+    </div>
+    <div class="tunnel-option" data-shape="hexagon">
+      <span class="shape-icon">⬡</span>
+      <span>육각형</span>
+    </div>
+    <div class="tunnel-option" data-shape="star">
+      <span class="shape-icon">☆</span>
+      <span>별</span>
+    </div>
+    <div class="tunnel-option" data-shape="infinity">
+      <span class="shape-icon">∞</span>
+      <span>무한</span>
+    </div>
+  </div>
+
+  <div id="toast">복사됨!</div>
+
+  <div id="context-menu">
+    <div class="context-item" id="ctx-edit">✏️ Edit</div>
+    <div class="context-item danger" id="ctx-delete">🗑️ Delete</div>
+  </div>
+
+  <div class="modal-overlay" id="shortcut-modal">
+    <div class="modal">
+      <h2 class="modal-title" id="modal-title">Add Shortcut</h2>
+      <div class="modal-field">
+        <label>Title</label>
+        <input type="text" id="shortcut-title" placeholder="Google">
+      </div>
+      <div class="modal-field">
+        <label>URL</label>
+        <input type="url" id="shortcut-url" placeholder="https://google.com">
+      </div>
+      <div class="modal-field">
+        <label>Category</label>
+        <select id="shortcut-layer">
+          <option value="0">Favorites</option>
+          <option value="1">Social</option>
+          <option value="2">Work</option>
+          <option value="3">Entertainment</option>
+          <option value="4">Desktop</option>
+          <option value="5">Office</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>Icon (URL 또는 비워두면 첫글자)</label>
+        <input type="text" id="shortcut-icon" placeholder="https://cdn.simpleicons.org/google/white">
+        <div class="icon-help">
+          <small>💡 <a href="https://simpleicons.org" target="_blank" style="color:var(--accent)">simpleicons.org</a>에서 아이콘 찾기</small>
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>Color</label>
+        <div class="color-picker-wrapper" id="color-picker"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn secondary" id="modal-cancel">Cancel</button>
+        <button class="modal-btn danger" id="modal-delete" style="display:none;">Delete</button>
+        <button class="modal-btn primary" id="modal-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+
+  <script>
+    /**
+     * 3D Tunnel Navigation Dashboard
+     * 무한 삼각형 터널 + 휠 네비게이션
+     */
+
+    const SECTIONS = [
+      { id: 0, name: 'FAVORITES', subtitle: 'Your most used sites' },
+      { id: 1, name: 'SOCIAL', subtitle: 'Stay connected' },
+      { id: 2, name: 'WORK', subtitle: 'Productivity tools' },
+      { id: 3, name: 'ENTERTAINMENT', subtitle: 'Relax & enjoy' },
+      { id: 4, name: 'DESKTOP', subtitle: 'Windows apps & tools' },
+      { id: 5, name: 'OFFICE', subtitle: 'Microsoft Office apps' }
+    ];
+
+    const COLORS = ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ff8c00', '#a55eea', '#26de81'];
+
+    const DEFAULT_SHORTCUTS = [
+      { id: '1', title: 'Google', url: 'https://google.com', color: '#4285F4', icon: 'si:google', layer: 0 },
+      { id: '2', title: 'Gmail', url: 'https://mail.google.com', color: '#EA4335', icon: 'si:gmail', layer: 0 },
+      { id: '3', title: 'ChatGPT', url: 'https://chatgpt.com', color: '#10A37F', icon: 'si:openai', layer: 0 },
+      { id: '28', title: 'Perplexity', url: 'https://perplexity.ai', color: '#1FB8CD', icon: 'si:perplexity', layer: 0 },
+      { id: '4', title: '카카오톡', url: 'kakaotalk://', color: '#FEE500', icon: 'si:kakaotalk', layer: 1 },
+      { id: '5', title: 'Twitter', url: 'https://twitter.com', color: '#000000', icon: 'si:x', layer: 1 },
+      { id: '6', title: 'Discord', url: 'https://discord.com', color: '#5865F2', icon: 'si:discord', layer: 1 },
+      { id: '13', title: 'LinkedIn', url: 'https://linkedin.com', color: '#0A66C2', icon: 'si:linkedin', layer: 1 },
+      { id: '7', title: 'GitHub', url: 'https://github.com', color: '#181717', icon: 'si:github', layer: 2 },
+      { id: '8', title: 'Notion', url: 'https://notion.so', color: '#000000', icon: 'si:notion', layer: 2 },
+      { id: '9', title: 'Figma', url: 'https://figma.com', color: '#F24E1E', icon: 'si:figma', layer: 2 },
+      { id: '10', title: 'YouTube', url: 'https://youtube.com', color: '#FF0000', icon: 'si:youtube', layer: 3 },
+      { id: '11', title: 'Netflix', url: 'https://netflix.com', color: '#E50914', icon: 'si:netflix', layer: 3 },
+      { id: '12', title: 'Spotify', url: 'https://spotify.com', color: '#1DB954', icon: 'si:spotify', layer: 3 },
+      { id: '14', title: '계산기', url: 'calculator://', color: '#00BCF2', icon: 'svg:calculator', layer: 4 },
+      { id: '15', title: '설정', url: 'ms-settings://', color: '#0078D4', icon: 'svg:settings', layer: 4 },
+      { id: '16', title: '스토어', url: 'ms-windows-store://', color: '#107C10', icon: 'svg:store', layer: 4 },
+      { id: '17', title: '알람/시계', url: 'ms-clock://', color: '#767676', icon: 'svg:clock', layer: 4 },
+      { id: '18', title: '캡처도구', url: 'ms-screenclip://', color: '#F7630C', icon: 'svg:scissors', layer: 4 },
+      { id: '19', title: '날씨', url: 'msnweather://', color: '#4A90D9', icon: 'svg:weather', layer: 4 },
+      { id: '20', title: 'Edge', url: 'microsoft-edge://', color: '#0078D4', icon: 'svg:edge', layer: 4 },
+      { id: '21', title: '사진', url: 'ms-photos://', color: '#FFB900', icon: 'svg:image', layer: 4 },
+      { id: '22', title: 'Word', url: 'https://www.office.com/launch/word', color: '#2B579A', icon: 'svg:word', layer: 5 },
+      { id: '23', title: 'Excel', url: 'https://www.office.com/launch/excel', color: '#217346', icon: 'svg:excel', layer: 5 },
+      { id: '24', title: 'PowerPoint', url: 'https://www.office.com/launch/powerpoint', color: '#D24726', icon: 'svg:powerpoint', layer: 5 },
+      { id: '25', title: 'Outlook', url: 'https://outlook.live.com', color: '#0078D4', icon: 'svg:outlook', layer: 5 },
+      { id: '26', title: 'OneNote', url: 'https://www.onenote.com/notebooks', color: '#7719AA', icon: 'svg:onenote', layer: 5 },
+      { id: '27', title: 'Teams', url: 'https://teams.microsoft.com', color: '#6264A7', icon: 'svg:teams', layer: 5 }
+    ];
+
+    // State
+    let shortcuts = [];
+    let currentSection = 0;
+    let tunnelSpeed = 0;
+    let targetSpeed = 0;
+    let cameraZ = 0;
+    let isTransitioning = false;
+    let editingId = null;
+    let selectedColor = COLORS[0];
+    let contextTargetId = null;
+    let tunnelShape = 'triangle'; // triangle, circle, square, hexagon, star, infinity
+    let glowIntensity = 0;
+    let glowTheme = 'gold';
+    let iconColorMode = 'brand'; // 'brand' or 'white'
+
+    const GLOW_THEMES = {
+      gold: {
+        primary: '#ffd700',
+        secondary: '#ff8c00',
+        orbs: ['rgba(255, 215, 0, 0.4)', 'rgba(255, 140, 0, 0.3)', 'rgba(255, 100, 100, 0.25)', 'rgba(255, 200, 100, 0.2)']
+      },
+      purple: {
+        primary: '#a855f7',
+        secondary: '#6366f1',
+        orbs: ['rgba(168, 85, 247, 0.4)', 'rgba(99, 102, 241, 0.3)', 'rgba(139, 92, 246, 0.25)', 'rgba(192, 132, 252, 0.2)']
+      },
+      cyan: {
+        primary: '#22d3ee',
+        secondary: '#06b6d4',
+        orbs: ['rgba(34, 211, 238, 0.4)', 'rgba(6, 182, 212, 0.3)', 'rgba(103, 232, 249, 0.25)', 'rgba(165, 243, 252, 0.2)']
+      },
+      pink: {
+        primary: '#f472b6',
+        secondary: '#ec4899',
+        orbs: ['rgba(244, 114, 182, 0.4)', 'rgba(236, 72, 153, 0.3)', 'rgba(249, 168, 212, 0.25)', 'rgba(251, 207, 232, 0.2)']
+      },
+      green: {
+        primary: '#4ade80',
+        secondary: '#22c55e',
+        orbs: ['rgba(74, 222, 128, 0.4)', 'rgba(34, 197, 94, 0.3)', 'rgba(134, 239, 172, 0.25)', 'rgba(187, 247, 208, 0.2)']
+      },
+      red: {
+        primary: '#f87171',
+        secondary: '#ef4444',
+        orbs: ['rgba(248, 113, 113, 0.4)', 'rgba(239, 68, 68, 0.3)', 'rgba(252, 165, 165, 0.25)', 'rgba(254, 202, 202, 0.2)']
+      },
+      blue: {
+        primary: '#60a5fa',
+        secondary: '#3b82f6',
+        orbs: ['rgba(96, 165, 250, 0.4)', 'rgba(59, 130, 246, 0.3)', 'rgba(147, 197, 253, 0.25)', 'rgba(191, 219, 254, 0.2)']
+      },
+      white: {
+        primary: '#f8fafc',
+        secondary: '#cbd5e1',
+        orbs: ['rgba(248, 250, 252, 0.3)', 'rgba(226, 232, 240, 0.25)', 'rgba(203, 213, 225, 0.2)', 'rgba(241, 245, 249, 0.15)']
+      }
+    };
+
+    // Three.js
+    let scene, camera, renderer;
+    let tunnelRings = [];
+    const RING_COUNT = 40;
+    const RING_SPACING = 50;
+    const TUNNEL_LENGTH = RING_COUNT * RING_SPACING;
+
+    function init() {
+      loadShortcuts();
+      loadSettings();
+      initThreeJS();
+      createTunnel();
+      createDepthIndicator();
+      initColorPicker();
+      renderCards();
+      initEventListeners();
+      updateClock();
+      setInterval(updateClock, 1000);
+      initSystemInfo();
+      updateTunnelMenu();
+      updateIconColorLabel();
+      applyGlowTheme(glowTheme);
+      animate();
+
+      setTimeout(() => {
+        gsap.to('#loading-screen', {
+          opacity: 0,
+          duration: 0.5,
+          onComplete: () => {
+            document.getElementById('loading-screen').style.display = 'none';
+            animateEntrance();
+            // 유성 시스템 시작
+            startMeteorShower();
+          }
+        });
+      }, 500);
+    }
+
+    // Storage
+    function loadShortcuts() {
+      const saved = localStorage.getItem('mydesktop-tunnel-shortcuts');
+      shortcuts = saved ? JSON.parse(saved) : [...DEFAULT_SHORTCUTS];
+    }
+
+    function saveShortcuts() {
+      localStorage.setItem('mydesktop-tunnel-shortcuts', JSON.stringify(shortcuts));
+    }
+
+    function loadSettings() {
+      const saved = localStorage.getItem('mydesktop-tunnel-settings');
+      if (saved) {
+        const settings = JSON.parse(saved);
+        tunnelShape = settings.tunnelShape || 'triangle';
+        glowTheme = settings.glowTheme || 'gold';
+        iconColorMode = settings.iconColorMode || 'brand';
+      }
+    }
+
+    function saveSettings() {
+      localStorage.setItem('mydesktop-tunnel-settings', JSON.stringify({ tunnelShape, glowTheme, iconColorMode }));
+    }
+
+    function applyGlowTheme(theme) {
+      glowTheme = theme;
+      const colors = GLOW_THEMES[theme];
+
+      // CSS 변수 업데이트
+      document.documentElement.style.setProperty('--accent', colors.primary);
+      document.documentElement.style.setProperty('--accent-secondary', colors.secondary);
+      document.documentElement.style.setProperty('--card-glow', colors.primary + '66');
+      document.documentElement.style.setProperty('--border', colors.primary + '33');
+
+      // 조명 오브 색상 업데이트
+      const orbs = document.querySelectorAll('.glow-orb');
+      orbs.forEach((orb, i) => {
+        orb.style.background = `radial-gradient(circle, ${colors.orbs[i]} 0%, transparent 70%)`;
+      });
+
+      // Three.js 터널 색상 업데이트
+      const threeColor = new THREE.Color(colors.primary);
+      tunnelRings.forEach(ring => {
+        ring.material.color = threeColor;
+      });
+
+      // 파티클 색상 업데이트
+      scene.children.forEach(child => {
+        if (child.userData.isParticle) {
+          child.material.color = threeColor;
+        }
+      });
+
+      // 버튼 상태 업데이트
+      document.querySelectorAll('.color-bar-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === theme);
+      });
+
+      saveSettings();
+    }
+
+    // Three.js
+    function initThreeJS() {
+      scene = new THREE.Scene();
+      scene.fog = new THREE.Fog(0x050508, 100, 1500);
+
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 2000);
+      camera.position.z = 0;
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      document.getElementById('canvas-container').appendChild(renderer.domElement);
+    }
+
+    function getShapeVertices(shape, radius, index) {
+      const vertices = [];
+      let sides, rotation;
+
+      switch (shape) {
+        case 'triangle':
+          sides = 3;
+          rotation = -Math.PI / 2;
+          break;
+        case 'square':
+          sides = 4;
+          rotation = Math.PI / 4;
+          break;
+        case 'hexagon':
+          sides = 6;
+          rotation = 0;
+          break;
+        case 'circle':
+          sides = 32;
+          rotation = 0;
+          break;
+        case 'star':
+          // 별 모양 - 5개 꼭지점
+          for (let j = 0; j <= 10; j++) {
+            const angle = (j / 10) * Math.PI * 2 - Math.PI / 2;
+            const r = j % 2 === 0 ? radius : radius * 0.5;
+            vertices.push(Math.cos(angle) * r, Math.sin(angle) * r, 0);
+          }
+          return vertices;
+        case 'infinity':
+          // 무한대 모양 (8자)
+          for (let j = 0; j <= 64; j++) {
+            const t = (j / 64) * Math.PI * 2;
+            const scale = radius * 0.6;
+            const x = scale * Math.cos(t) / (1 + Math.sin(t) * Math.sin(t));
+            const y = scale * Math.sin(t) * Math.cos(t) / (1 + Math.sin(t) * Math.sin(t));
+            vertices.push(x * 1.8, y * 1.5, 0);
+          }
+          return vertices;
+        default:
+          sides = 3;
+          rotation = -Math.PI / 2;
+      }
+
+      for (let j = 0; j <= sides; j++) {
+        const angle = (j / sides) * Math.PI * 2 + rotation;
+        vertices.push(Math.cos(angle) * radius, Math.sin(angle) * radius, 0);
+      }
+      return vertices;
+    }
+
+    function createTunnel() {
+      // 기존 터널 링 제거
+      tunnelRings.forEach(ring => scene.remove(ring));
+      tunnelRings = [];
+
+      // 기존 파티클 제거
+      scene.children.filter(c => c.userData.isParticle).forEach(p => scene.remove(p));
+
+      const goldenColor = new THREE.Color(0xffd700);
+
+      for (let i = 0; i < RING_COUNT; i++) {
+        const radius = 300 + Math.sin(i * 0.3) * 50;
+        const vertices = getShapeVertices(tunnelShape, radius, i);
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+
+        const material = new THREE.LineBasicMaterial({
+          color: goldenColor,
+          transparent: true,
+          opacity: 0.6
+        });
+
+        const ring = new THREE.LineLoop(geometry, material);
+        ring.position.z = -i * RING_SPACING;
+        ring.rotation.z = i * 0.05;
+        ring.userData.baseZ = ring.position.z;
+
+        scene.add(ring);
+        tunnelRings.push(ring);
+      }
+
+      // 파티클 추가
+      const particleCount = 300;
+      const particleGeometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(particleCount * 3);
+
+      for (let i = 0; i < particleCount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 100 + Math.random() * 200;
+        positions[i * 3] = Math.cos(angle) * radius;
+        positions[i * 3 + 1] = Math.sin(angle) * radius;
+        positions[i * 3 + 2] = -Math.random() * TUNNEL_LENGTH;
+      }
+
+      particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+      const particleMaterial = new THREE.PointsMaterial({
+        color: 0xffd700,
+        size: 2,
+        transparent: true,
+        opacity: 0.5,
+        blending: THREE.AdditiveBlending
+      });
+
+      const particles = new THREE.Points(particleGeometry, particleMaterial);
+      particles.userData.isParticle = true;
+      scene.add(particles);
+    }
+
+    function changeTunnelShape(shape) {
+      tunnelShape = shape;
+      saveSettings();
+      createTunnel();
+      updateTunnelMenu();
+      hideTunnelSubmenu();
+      showToast(`터널 모양: ${getShapeName(shape)}`);
+    }
+
+    function getShapeName(shape) {
+      const names = {
+        triangle: '삼각형',
+        circle: '원형',
+        square: '사각형',
+        hexagon: '육각형',
+        star: '별',
+        infinity: '무한'
+      };
+      return names[shape] || shape;
+    }
+
+    function updateTunnelMenu() {
+      document.querySelectorAll('.tunnel-option').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.shape === tunnelShape);
+      });
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // 터널 속도 보간 (더 부드럽게)
+      tunnelSpeed += (targetSpeed - tunnelSpeed) * 0.08;
+
+      // 조명 강도 감쇠
+      glowIntensity *= 0.95;
+
+      // 링 이동
+      tunnelRings.forEach((ring, i) => {
+        ring.position.z += tunnelSpeed;
+        ring.rotation.z += 0.002;
+
+        // 링이 카메라 뒤로 가면 앞으로 이동
+        if (ring.position.z > 100) {
+          ring.position.z -= TUNNEL_LENGTH;
+        }
+        if (ring.position.z < -TUNNEL_LENGTH + 100) {
+          ring.position.z += TUNNEL_LENGTH;
+        }
+
+        // 거리에 따른 밝기 + 휠 반응
+        const dist = Math.abs(ring.position.z);
+        const baseOpacity = Math.max(0.1, 0.8 - dist / 1500);
+        const glowBoost = glowIntensity * (1 - dist / 1500) * 0.5;
+        ring.material.opacity = Math.min(1, baseOpacity + glowBoost);
+      });
+
+      // 파티클 이동
+      scene.children.forEach(child => {
+        if (child.userData.isParticle) {
+          const positions = child.geometry.attributes.position.array;
+          for (let i = 0; i < positions.length / 3; i++) {
+            positions[i * 3 + 2] += tunnelSpeed;
+            if (positions[i * 3 + 2] > 100) {
+              positions[i * 3 + 2] -= TUNNEL_LENGTH;
+            }
+            if (positions[i * 3 + 2] < -TUNNEL_LENGTH + 100) {
+              positions[i * 3 + 2] += TUNNEL_LENGTH;
+            }
+          }
+          child.geometry.attributes.position.needsUpdate = true;
+
+          // 파티클 밝기도 휠에 반응
+          child.material.opacity = 0.5 + glowIntensity * 0.3;
+        }
+      });
+
+      // 몽환적 조명 업데이트
+      updateAmbientGlow();
+
+      renderer.render(scene, camera);
+    }
+
+    function updateAmbientGlow() {
+      const orbs = document.querySelectorAll('.glow-orb');
+      const time = Date.now() * 0.001;
+      const speedFactor = Math.abs(tunnelSpeed) / 30;
+
+      orbs.forEach((orb, i) => {
+        // 기본 움직임 + 휠 반응
+        const baseX = Math.sin(time * 0.3 + i * 1.5) * 30;
+        const baseY = Math.cos(time * 0.2 + i * 1.2) * 20;
+        const glowMove = glowIntensity * 50;
+
+        orb.style.transform = `translate(${baseX + (i % 2 ? glowMove : -glowMove)}px, ${baseY}px)`;
+
+        // 휠에 반응하는 밝기
+        const baseScale = 1 + Math.sin(time * 0.5 + i) * 0.1;
+        const glowScale = 1 + speedFactor * 0.3;
+        orb.style.transform += ` scale(${baseScale * glowScale})`;
+
+        // 휠에 반응하는 투명도
+        orb.style.opacity = 0.6 + glowIntensity * 0.4;
+      });
+
+      // 전체 조명 컨테이너 밝기
+      const glowContainer = document.getElementById('ambient-glow');
+      glowContainer.style.opacity = 0.6 + glowIntensity * 0.3;
+    }
+
+    // Navigation
+    function goToSection(index, forceDirection = null) {
+      if (isTransitioning) return;
+
+      // 순환 처리 및 방향 계산
+      let direction;
+      if (index < 0) {
+        index = SECTIONS.length - 1;
+        direction = -1; // 뒤로 가는 것
+      } else if (index >= SECTIONS.length) {
+        index = 0;
+        direction = 1; // 앞으로 가는 것
+      } else {
+        direction = index > currentSection ? 1 : -1;
+      }
+
+      if (index === currentSection) return;
+      if (forceDirection !== null) direction = forceDirection;
+
+      isTransitioning = true;
+
+      // 터널 가속
+      targetSpeed = direction * 30;
+
+      // 섹션 타이틀 애니메이션
+      gsap.to('#section-info', {
+        opacity: 0,
+        y: direction * -30,
+        duration: 0.3,
+        onComplete: () => {
+          currentSection = index;
+          updateSectionInfo();
+          updateDepthIndicator();
+
+          gsap.fromTo('#section-info',
+            { opacity: 0, y: direction * 30 },
+            { opacity: 1, y: 0, duration: 0.3 }
+          );
+        }
+      });
+
+      // 카드 깊이 업데이트 (GSAP로 부드럽게)
+      animateCardsToSection(index, direction);
+
+      // 터널 속도를 서서히 감속
+      gsap.to({ speed: targetSpeed }, {
+        speed: 0,
+        duration: 0.6,
+        ease: 'power2.out',
+        onUpdate: function() {
+          targetSpeed = this.targets()[0].speed;
+        }
+      });
+
+      setTimeout(() => {
+        isTransitioning = false;
+      }, 600);
+
+      // 스크롤 힌트 숨기기
+      gsap.to('#scroll-hint', { opacity: 0, duration: 0.5 });
+    }
+
+    function animateCardsToSection(targetIndex, direction) {
+      const sections = document.querySelectorAll('.section-cards');
+      const DEPTH_SPACING = 600;
+
+      // 먼저 모든 섹션에서 active 제거
+      sections.forEach(s => s.classList.remove('active'));
+
+      sections.forEach((section, i) => {
+        const offset = i - targetIndex;
+        const absOffset = Math.abs(offset);
+        const zPos = -offset * DEPTH_SPACING;
+        const scale = offset === 0 ? 1 : Math.max(0.3, 1 - absOffset * 0.4);
+        const yOffset = offset > 0 ? -40 : (offset < 0 ? 40 : 0);
+
+        // 현재 섹션과 앞/뒤 1개만 보이게, 나머지는 숨김
+        const opacity = absOffset <= 1 ? (offset === 0 ? 1 : 0.3) : 0;
+
+        // z-index로 렌더링 순서 강제
+        const zIndex = 100 - absOffset;
+
+        // 애니메이션 전에 보여야 할 섹션은 display 먼저 설정
+        if (absOffset <= 1) {
+          gsap.set(section, { display: 'flex' });
+        }
+
+        gsap.to(section, {
+          z: zPos,
+          scale: scale,
+          opacity: opacity,
+          y: yOffset,
+          zIndex: zIndex,
+          duration: 0.8,
+          ease: 'power2.out',
+          onComplete: () => {
+            if (offset === 0) {
+              section.classList.add('active');
+            }
+            // 애니메이션 끝난 후 멀리 있는 섹션 숨김
+            if (absOffset > 1) {
+              gsap.set(section, { display: 'none' });
+            }
+          }
+        });
+
+        // 현재 섹션 카드들 등장 애니메이션
+        if (offset === 0) {
+          const cards = section.querySelectorAll('.shortcut-card');
+          cards.forEach((card, ci) => {
+            gsap.fromTo(card,
+              { scale: 0.5, opacity: 0 },
+              { scale: 1, opacity: 1, duration: 0.4, delay: 0.3 + ci * 0.05, ease: 'back.out(1.7)' }
+            );
+          });
+        }
+      });
+    }
+
+    function updateSectionInfo() {
+      const section = SECTIONS[currentSection];
+      document.getElementById('section-title').textContent = section.name;
+      document.getElementById('section-subtitle').textContent = section.subtitle;
+    }
+
+    // Cards - 모든 섹션을 3D 깊이로 렌더링
+    function renderAllCards() {
+      const space = document.getElementById('cards-3d-space');
+      space.innerHTML = '';
+
+      SECTIONS.forEach((section, sectionIndex) => {
+        const sectionDiv = document.createElement('div');
+        sectionDiv.className = 'section-cards';
+        sectionDiv.dataset.section = sectionIndex;
+        sectionDiv.dataset.label = section.name; // 뒤 섹션에 라벨 표시
+
+        const sectionShortcuts = shortcuts.filter(s => s.layer === sectionIndex);
+        sectionShortcuts.forEach((shortcut, i) => {
+          const card = createCard(shortcut);
+          sectionDiv.appendChild(card);
+        });
+
+        space.appendChild(sectionDiv);
+      });
+
+      updateCardsDepth();
+    }
+
+    function createCard(shortcut) {
+      const card = document.createElement('div');
+      card.className = 'shortcut-card';
+      card.dataset.id = shortcut.id;
+
+      const iconContent = getIconContent(shortcut);
+
+      card.innerHTML = `
+        <div class="shortcut-icon">${iconContent}</div>
+        <div class="shortcut-title">${shortcut.title}</div>
+        <div class="shortcut-url">${getDomain(shortcut.url)}</div>
+        <div class="card-actions">
+          <button class="card-btn edit-btn" title="수정">
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+          </button>
+          <button class="card-btn delete-btn" title="삭제">
+            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          </button>
+        </div>
+      `;
+
+      // 카드 색상을 글로우 효과로 활용
+      card.style.setProperty('--card-color', shortcut.color);
+
+      // 수정 버튼
+      card.querySelector('.edit-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openModal(shortcut.id);
+      });
+
+      // 삭제 버튼
+      card.querySelector('.delete-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm('삭제할까요?')) {
+          shortcuts = shortcuts.filter(x => x.id !== shortcut.id);
+          saveShortcuts();
+          renderCards();
+        }
+      });
+
+      // 마우스 다운 - 눌림 효과
+      card.addEventListener('mousedown', () => {
+        const parent = card.closest('.section-cards');
+        if (!parent.classList.contains('active')) return;
+        card.classList.add('pressing');
+      });
+
+      // 마우스 업 - 눌림 해제
+      card.addEventListener('mouseup', () => {
+        card.classList.remove('pressing');
+      });
+
+      card.addEventListener('mouseleave', () => {
+        card.classList.remove('pressing');
+      });
+
+      // 클릭 - 열기
+      card.addEventListener('click', () => {
+        const parent = card.closest('.section-cards');
+        if (!parent.classList.contains('active')) return;
+
+        card.classList.remove('pressing');
+        card.classList.add('opening');
+
+        gsap.to(card, {
+          scale: 1.1, duration: 0.2,
+          onComplete: () => {
+            gsap.to(card, {
+              scale: 1.3, z: 200, opacity: 0, duration: 0.4,
+              ease: 'power2.in',
+              onComplete: () => window.location.href = shortcut.url
+            });
+          }
+        });
+      });
+
+      card.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        const parent = card.closest('.section-cards');
+        if (!parent.classList.contains('active')) return;
+        showContextMenu(e, shortcut.id);
+      });
+
+      return card;
+    }
+
+    function updateCardsDepth() {
+      const sections = document.querySelectorAll('.section-cards');
+      const DEPTH_SPACING = 600; // 섹션 간 Z 간격
+
+      sections.forEach((section, i) => {
+        const offset = i - currentSection;
+        const absOffset = Math.abs(offset);
+        const zPos = -offset * DEPTH_SPACING;
+        const scale = offset === 0 ? 1 : Math.max(0.3, 1 - absOffset * 0.4);
+        const yOffset = offset > 0 ? -30 : (offset < 0 ? 30 : 0);
+
+        // 현재 섹션과 앞/뒤 1개만 보이게, 나머지는 숨김
+        const opacity = absOffset <= 1 ? (offset === 0 ? 1 : 0.3) : 0;
+
+        // z-index로 렌더링 순서 강제 (현재 섹션이 가장 위)
+        const zIndex = 100 - absOffset;
+
+        // GSAP.set으로 초기 상태 설정
+        gsap.set(section, {
+          z: zPos,
+          scale: scale,
+          opacity: opacity,
+          y: yOffset,
+          zIndex: zIndex,
+          display: absOffset <= 1 ? 'flex' : 'none'
+        });
+
+        section.classList.toggle('active', offset === 0);
+      });
+    }
+
+    // 기존 renderCards 대체
+    function renderCards() {
+      renderAllCards();
+    }
+
+    function getDomain(url) {
+      try { return new URL(url).hostname; }
+      catch { return url; }
+    }
+
+    // 아이콘 콘텐츠 생성
+    function getIconContent(shortcut) {
+      const icon = shortcut.icon;
+      if (!icon) return `<span style="color:${shortcut.color};font-size:24px;font-weight:bold;">${shortcut.title[0].toUpperCase()}</span>`;
+
+      // Simple Icons (si:name)
+      if (icon.startsWith('si:')) {
+        const name = icon.replace('si:', '');
+        const color = iconColorMode === 'white' ? 'white' : shortcut.color;
+        return `<img src="https://cdn.simpleicons.org/${name}/${color.replace('#', '')}" alt="${shortcut.title}" onerror="this.parentElement.innerHTML='${shortcut.title[0].toUpperCase()}'">`;
+      }
+
+      // URL 이미지
+      if (icon.startsWith('http')) {
+        return `<img src="${icon}" alt="${shortcut.title}" onerror="this.parentElement.innerHTML='${shortcut.title[0].toUpperCase()}'">`;
+      }
+
+      // SVG 아이콘
+      if (icon.startsWith('svg:')) {
+        const name = icon.replace('svg:', '');
+        const color = iconColorMode === 'white' ? 'white' : shortcut.color;
+        return getSvgIcon(name, color);
+      }
+
+      return icon;
+    }
+
+    // SVG 아이콘 라이브러리
+    function getSvgIcon(name, color = 'white') {
+      const icons = {
+        calculator: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2zm4 8h-2v-6h2v6zm0-8h-2V7h2v2zm-8 8H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2z"/></svg>`,
+        settings: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`,
+        store: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M18.36 9l.6 3H5.04l.6-3h12.72M20 4H4v2h16V4zm0 3H4l-1 5v2h1v6h10v-6h4v6h2v-6h1v-2l-1-5zM6 18v-4h6v4H6z"/></svg>`,
+        clock: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>`,
+        scissors: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3z"/></svg>`,
+        weather: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>`,
+        image: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>`,
+        edge: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M21 12c0-1.54-.37-3-.99-4.3-.62 1.1-.99 2.37-.99 3.71 0 2.87 1.63 5.38 4 6.63-.65 1.27-1.54 2.39-2.63 3.29C17.75 17.64 15.05 15 12 15c-2.21 0-4.21.9-5.66 2.34C4.9 15.9 4 13.9 4 12c0-4.42 3.58-8 8-8 2.03 0 3.89.76 5.3 2H12c-3.31 0-6 2.69-6 6 0 2.21 1.79 4 4 4 1.54 0 2.87-.87 3.54-2.15.42.1.86.15 1.31.15 1.55 0 2.98-.56 4.08-1.49.07.49.07.99.07 1.49 0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2c2.72 0 5.19 1.09 6.99 2.86C18.35 4.33 17.71 4 17 4c-1.66 0-3 1.34-3 3s1.34 3 3 3c.39 0 .76-.08 1.1-.21.58.93.9 2.02.9 3.21z"/></svg>`,
+        word: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M6 2h8l6 6v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2zm8 7h5l-5-5v5zM8.5 18h1.2l1.3-5.3 1.3 5.3h1.2l1.8-7h-1.3l-1.1 5-1.3-5h-1.2l-1.3 5-1.1-5H7.7l1.8 7z"/></svg>`,
+        excel: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M6 2h8l6 6v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2zm8 7h5l-5-5v5zM8 18h1.5l1.5-2.5 1.5 2.5H14l-2.25-3.5L14 11h-1.5l-1.5 2.5L9.5 11H8l2.25 3.5L8 18z"/></svg>`,
+        powerpoint: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M6 2h8l6 6v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2zm8 7h5l-5-5v5zM8 18v-7h3c1.66 0 3 1.34 3 3s-1.34 3-3 3H9.5v1H8zm1.5-2.5H11c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5H9.5v3z"/></svg>`,
+        outlook: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/><path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></svg>`,
+        onenote: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M6 2h8l6 6v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2zm8 7h5l-5-5v5zM8 18v-7h1.5l2.5 4.5V11H14v7h-1.5L10 13.5V18H8z"/></svg>`,
+        teams: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M19.19 8.77q-.46 0-.86-.18-.39-.18-.69-.48-.29-.31-.46-.71-.16-.41-.16-.86 0-.46.16-.85.17-.4.46-.7.3-.3.7-.47.39-.18.85-.18.46 0 .85.18.4.17.7.47.3.3.47.7.17.4.17.85 0 .45-.17.86-.17.4-.47.71-.3.3-.7.48-.39.18-.85.18zm-5.92-1.12q-.69 0-1.29-.26-.59-.27-1.04-.72-.44-.46-.69-1.06-.26-.6-.26-1.3 0-.69.26-1.29.25-.6.69-1.05.45-.44 1.04-.7.6-.26 1.3-.26.69 0 1.29.26.6.26 1.04.7.45.45.7 1.05.26.6.26 1.3 0 .69-.26 1.29-.25.6-.7 1.05-.44.45-1.04.72-.6.26-1.29.26zm8.08 10.35H14.7V10H21c.55 0 1 .45 1 1v6c0 .55-.45 1-1 1h-.65zM3 19v-8c0-.55.45-1 1-1h7v9H4c-.55 0-1-.45-1-1zm9-9v10h4V10h-4z"/></svg>`
+      };
+      return icons[name] || `<span style="color:${color};font-size:24px;font-weight:bold;">${name[0].toUpperCase()}</span>`;
+    }
+
+    // Depth Indicator
+    function createDepthIndicator() {
+      const container = document.getElementById('depth-indicator');
+      SECTIONS.forEach((section, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'depth-dot' + (i === 0 ? ' active' : '');
+        dot.dataset.label = section.name;
+        dot.addEventListener('click', () => goToSection(i));
+        container.appendChild(dot);
+      });
+    }
+
+    function updateDepthIndicator() {
+      document.querySelectorAll('.depth-dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === currentSection);
+      });
+    }
+
+    // Color Picker
+    function initColorPicker() {
+      const picker = document.getElementById('color-picker');
+      COLORS.forEach(color => {
+        const opt = document.createElement('div');
+        opt.className = 'color-option' + (color === selectedColor ? ' selected' : '');
+        opt.style.background = color;
+        opt.addEventListener('click', () => {
+          document.querySelectorAll('.color-option').forEach(el => el.classList.remove('selected'));
+          opt.classList.add('selected');
+          selectedColor = color;
+        });
+        picker.appendChild(opt);
+      });
+    }
+
+    // Modal
+    function openModal(id = null) {
+      editingId = id;
+      const modal = document.getElementById('shortcut-modal');
+      const title = document.getElementById('modal-title');
+      const deleteBtn = document.getElementById('modal-delete');
+
+      if (id) {
+        const s = shortcuts.find(x => x.id === id);
+        if (s) {
+          title.textContent = 'Edit Shortcut';
+          document.getElementById('shortcut-title').value = s.title;
+          document.getElementById('shortcut-url').value = s.url;
+          document.getElementById('shortcut-layer').value = s.layer;
+          document.getElementById('shortcut-icon').value = s.icon || '';
+          selectedColor = s.color;
+          deleteBtn.style.display = 'block';
+        }
+      } else {
+        title.textContent = 'Add Shortcut';
+        document.getElementById('shortcut-title').value = '';
+        document.getElementById('shortcut-url').value = '';
+        document.getElementById('shortcut-layer').value = currentSection;
+        document.getElementById('shortcut-icon').value = '';
+        selectedColor = COLORS[0];
+        deleteBtn.style.display = 'none';
+      }
+
+      document.querySelectorAll('.color-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.style.background === selectedColor);
+      });
+
+      modal.classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('shortcut-modal').classList.remove('active');
+      editingId = null;
+    }
+
+    function saveShortcut() {
+      const title = document.getElementById('shortcut-title').value.trim();
+      let url = document.getElementById('shortcut-url').value.trim();
+      const layer = parseInt(document.getElementById('shortcut-layer').value);
+      const icon = document.getElementById('shortcut-icon').value.trim();
+
+      if (!title || !url) return alert('Please fill all fields');
+      if (!url.startsWith('http') && !url.includes('://')) url = 'https://' + url;
+
+      if (editingId) {
+        const idx = shortcuts.findIndex(x => x.id === editingId);
+        if (idx !== -1) shortcuts[idx] = { ...shortcuts[idx], title, url, layer, color: selectedColor, icon: icon || null };
+      } else {
+        shortcuts.push({ id: Date.now().toString(), title, url, layer, color: selectedColor, icon: icon || null });
+      }
+
+      saveShortcuts();
+      renderCards();
+      closeModal();
+    }
+
+    function deleteShortcut(id) {
+      if (!confirm('Delete?')) return;
+      shortcuts = shortcuts.filter(x => x.id !== id);
+      saveShortcuts();
+      renderCards();
+      closeModal();
+    }
+
+    // Context Menu
+    function showContextMenu(e, id) {
+      const menu = document.getElementById('context-menu');
+      contextTargetId = id;
+      menu.style.left = e.clientX + 'px';
+      menu.style.top = e.clientY + 'px';
+      menu.classList.add('active');
+    }
+
+    function hideContextMenu() {
+      document.getElementById('context-menu').classList.remove('active');
+    }
+
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock-time').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+      document.getElementById('clock-date').textContent = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    // System Info
+    function initSystemInfo() {
+      // CPU 코어 수
+      const cores = navigator.hardwareConcurrency || '--';
+      document.getElementById('cores-value').textContent = cores;
+
+      // 네트워크 정보
+      if ('connection' in navigator) {
+        updateNetwork();
+        navigator.connection.addEventListener('change', updateNetwork);
+      } else {
+        document.getElementById('network-row').style.display = 'none';
+      }
+
+      // 배터리
+      if ('getBattery' in navigator) {
+        navigator.getBattery().then(battery => {
+          updateBattery(battery);
+          battery.addEventListener('levelchange', () => updateBattery(battery));
+          battery.addEventListener('chargingchange', () => updateBattery(battery));
+        });
+      } else {
+        document.getElementById('battery-row').style.display = 'none';
+      }
+
+      // JS 힙 메모리 (Chrome만)
+      if (performance.memory) {
+        updateMemory();
+        setInterval(updateMemory, 2000);
+      } else {
+        document.getElementById('memory-row').style.display = 'none';
+      }
+    }
+
+    function updateNetwork() {
+      const conn = navigator.connection;
+      if (!conn) return;
+
+      let info = conn.effectiveType?.toUpperCase() || '--';
+      if (conn.downlink) {
+        info += ` ${conn.downlink}Mbps`;
+      }
+      document.getElementById('network-value').textContent = info;
+
+      // 연결 상태에 따른 아이콘
+      const icon = document.querySelector('#network-row .system-icon');
+      if (conn.effectiveType === '4g') icon.textContent = '📶';
+      else if (conn.effectiveType === '3g') icon.textContent = '📵';
+      else if (conn.effectiveType === '2g') icon.textContent = '📵';
+      else icon.textContent = '📶';
+    }
+
+    function updateBattery(battery) {
+      const level = Math.round(battery.level * 100);
+      document.getElementById('battery-value').textContent = level + '%';
+      document.getElementById('battery-bar').style.width = level + '%';
+
+      const row = document.getElementById('battery-row');
+      if (battery.charging) {
+        row.classList.add('battery-charging');
+        document.querySelector('#battery-row .system-icon').textContent = '⚡';
+      } else {
+        row.classList.remove('battery-charging');
+        document.querySelector('#battery-row .system-icon').textContent = level <= 20 ? '🪫' : '🔋';
+      }
+    }
+
+    function updateMemory() {
+      if (!performance.memory) return;
+
+      const used = performance.memory.usedJSHeapSize;
+      const total = performance.memory.jsHeapSizeLimit;
+      const usedMB = Math.round(used / 1024 / 1024);
+      const percent = Math.round((used / total) * 100);
+
+      document.getElementById('memory-value').textContent = usedMB + 'MB';
+      document.getElementById('memory-bar').style.width = percent + '%';
+    }
+
+    // Settings Menu
+    function toggleSettingsMenu() {
+      document.getElementById('settings-menu').classList.toggle('active');
+    }
+
+    function hideSettingsMenu() {
+      document.getElementById('settings-menu').classList.remove('active');
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('active');
+      setTimeout(() => toast.classList.remove('active'), 2000);
+    }
+
+    function copyProtocolUrl() {
+      const url = 'chrome://settings/handlers';
+      navigator.clipboard.writeText(url).then(() => {
+        showToast('📋 복사됨! 주소창에 붙여넣기 하세요');
+        hideSettingsMenu();
+      });
+    }
+
+    function resetShortcuts() {
+      if (!confirm('바로가기를 초기화할까요?')) return;
+      shortcuts = [...DEFAULT_SHORTCUTS];
+      saveShortcuts();
+      renderCards();
+      hideSettingsMenu();
+      showToast('🔄 초기화 완료!');
+    }
+
+    function toggleIconColor() {
+      iconColorMode = iconColorMode === 'brand' ? 'white' : 'brand';
+      saveSettings();
+      updateIconColorLabel();
+      renderCards();
+      hideSettingsMenu();
+      showToast(iconColorMode === 'brand' ? '🎨 브랜드 색상' : '⚪ 흰색 아이콘');
+    }
+
+    function updateIconColorLabel() {
+      const label = document.getElementById('icon-color-label');
+      label.textContent = iconColorMode === 'brand' ? '아이콘: 브랜드 색상' : '아이콘: 흰색';
+    }
+
+    // Entrance Animation
+    function animateEntrance() {
+      gsap.fromTo('#section-info',
+        { y: -50, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8 }
+      );
+      gsap.fromTo('#clock-widget',
+        { x: -50, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.6 }
+      );
+      gsap.fromTo('.depth-dot',
+        { scale: 0, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.4, stagger: 0.1, delay: 0.3 }
+      );
+      gsap.fromTo('.bottom-buttons',
+        { scale: 0, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.5, delay: 0.5, ease: 'back.out(1.7)' }
+      );
+
+      // 현재 섹션 카드들 등장 애니메이션
+      const activeSection = document.querySelector('.section-cards.active');
+      if (activeSection) {
+        const cards = activeSection.querySelectorAll('.shortcut-card');
+        cards.forEach((card, i) => {
+          gsap.fromTo(card,
+            { scale: 0.3, opacity: 0, z: -200 },
+            { scale: 1, opacity: 1, z: 0, duration: 0.6, delay: 0.2 + i * 0.08, ease: 'back.out(1.7)' }
+          );
+        });
+      }
+    }
+
+    // Event Listeners
+    function initEventListeners() {
+      // Wheel - 부드러운 스크롤
+      let wheelAccumulator = 0;
+      let wheelTimeout;
+      let lastWheelTime = 0;
+      const WHEEL_THRESHOLD = 150; // 섹션 전환에 필요한 누적값
+      const WHEEL_DECAY = 0.92; // 누적값 감쇠율
+
+      // 휠 누적값 감쇠 애니메이션
+      function decayWheelAccumulator() {
+        if (Math.abs(wheelAccumulator) > 1) {
+          wheelAccumulator *= WHEEL_DECAY;
+          requestAnimationFrame(decayWheelAccumulator);
+        } else {
+          wheelAccumulator = 0;
+        }
+      }
+
+      window.addEventListener('wheel', e => {
+        const now = Date.now();
+        const timeDelta = now - lastWheelTime;
+        lastWheelTime = now;
+
+        // 터널 움직임 효과 (항상 부드럽게)
+        const speedMultiplier = Math.min(Math.abs(e.deltaY) / 50, 1);
+        targetSpeed = (e.deltaY > 0 ? 8 : -8) * speedMultiplier;
+
+        // 몽환적 조명 반응
+        glowIntensity = Math.min(1, glowIntensity + Math.abs(e.deltaY) * 0.005);
+
+        clearTimeout(wheelTimeout);
+        wheelTimeout = setTimeout(() => {
+          targetSpeed = 0;
+          decayWheelAccumulator();
+        }, 150);
+
+        // 섹션 이동 - 누적 방식
+        if (!isTransitioning) {
+          // 빠른 연속 스크롤이면 누적값 추가
+          if (timeDelta < 200) {
+            wheelAccumulator += e.deltaY * 0.5;
+          } else {
+            // 새로운 스크롤 시작
+            wheelAccumulator = e.deltaY * 0.8;
+          }
+
+          // 임계값 초과 시 섹션 이동
+          if (wheelAccumulator > WHEEL_THRESHOLD) {
+            goToSection(currentSection + 1);
+            wheelAccumulator = 0;
+          } else if (wheelAccumulator < -WHEEL_THRESHOLD) {
+            goToSection(currentSection - 1);
+            wheelAccumulator = 0;
+          }
+        }
+      }, { passive: true });
+
+      // Resize
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      // Add button
+      document.getElementById('add-btn').addEventListener('click', () => openModal());
+
+      // Modal
+      document.getElementById('modal-cancel').addEventListener('click', closeModal);
+      document.getElementById('modal-save').addEventListener('click', saveShortcut);
+      document.getElementById('modal-delete').addEventListener('click', () => editingId && deleteShortcut(editingId));
+      document.getElementById('shortcut-modal').addEventListener('click', e => {
+        if (e.target.classList.contains('modal-overlay')) closeModal();
+      });
+
+      // Context menu
+      document.getElementById('ctx-edit').addEventListener('click', () => {
+        if (contextTargetId) openModal(contextTargetId);
+        hideContextMenu();
+      });
+      document.getElementById('ctx-delete').addEventListener('click', () => {
+        if (contextTargetId) deleteShortcut(contextTargetId);
+        hideContextMenu();
+      });
+      document.addEventListener('click', hideContextMenu);
+
+      // Keyboard
+      document.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') goToSection(currentSection + 1);
+        if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') goToSection(currentSection - 1);
+        if (e.key === 'Escape') { closeModal(); hideContextMenu(); hideSettingsMenu(); }
+      });
+
+      // Settings menu
+      document.getElementById('settings-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        toggleSettingsMenu();
+      });
+      document.getElementById('menu-protocol').addEventListener('click', copyProtocolUrl);
+      document.getElementById('menu-reset').addEventListener('click', resetShortcuts);
+      document.getElementById('menu-icon-color').addEventListener('click', toggleIconColor);
+
+      // Tunnel submenu
+      document.getElementById('menu-tunnel').addEventListener('click', e => {
+        e.stopPropagation();
+        toggleTunnelSubmenu();
+      });
+      document.getElementById('menu-tunnel').addEventListener('mouseenter', () => {
+        showTunnelSubmenu();
+      });
+
+      document.querySelectorAll('.tunnel-option').forEach(opt => {
+        opt.addEventListener('click', e => {
+          e.stopPropagation();
+          changeTunnelShape(opt.dataset.shape);
+        });
+      });
+
+      document.addEventListener('click', e => {
+        if (!e.target.closest('#settings-menu') && !e.target.closest('#settings-btn') && !e.target.closest('#tunnel-submenu')) {
+          hideSettingsMenu();
+          hideTunnelSubmenu();
+        }
+      });
+
+      // Color bar
+      document.querySelectorAll('.color-bar-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          applyGlowTheme(btn.dataset.theme);
+          // 클릭 시 조명 플래시 효과
+          glowIntensity = 1;
+        });
+      });
+
+      // Background click - 조명 발산 효과
+      document.addEventListener('click', e => {
+        // 카드나 UI 요소 클릭이 아닐 때만
+        if (!e.target.closest('.shortcut-card') &&
+            !e.target.closest('.floating-btn') &&
+            !e.target.closest('#settings-menu') &&
+            !e.target.closest('#tunnel-submenu') &&
+            !e.target.closest('#color-bar') &&
+            !e.target.closest('.modal-overlay') &&
+            !e.target.closest('#context-menu') &&
+            !e.target.closest('.depth-dot')) {
+          createClickEffect(e.clientX, e.clientY);
+        }
+      });
+    }
+
+    function createClickEffect(x, y) {
+      // 조명 강도 최대로
+      glowIntensity = 1.5;
+
+      // 리플 이펙트
+      const ripple = document.createElement('div');
+      ripple.className = 'click-ripple';
+      ripple.style.left = x + 'px';
+      ripple.style.top = y + 'px';
+      ripple.style.width = '600px';
+      ripple.style.height = '600px';
+      document.body.appendChild(ripple);
+
+      // 파티클 버스트
+      const burst = document.createElement('div');
+      burst.className = 'click-burst';
+      burst.style.left = x + 'px';
+      burst.style.top = y + 'px';
+      document.body.appendChild(burst);
+
+      const particleCount = 12;
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'burst-particle';
+        const angle = (i / particleCount) * Math.PI * 2;
+        const distance = 80 + Math.random() * 60;
+        const duration = 0.6 + Math.random() * 0.4;
+
+        particle.style.left = '0px';
+        particle.style.top = '0px';
+
+        burst.appendChild(particle);
+
+        gsap.to(particle, {
+          x: Math.cos(angle) * distance,
+          y: Math.sin(angle) * distance,
+          opacity: 0,
+          scale: 0,
+          duration: duration,
+          ease: 'power2.out'
+        });
+      }
+
+      // 터널 링에 펄스 효과
+      tunnelRings.forEach((ring, i) => {
+        const delay = i * 0.02;
+        gsap.to(ring.material, {
+          opacity: 1,
+          duration: 0.1,
+          delay: delay,
+          onComplete: () => {
+            gsap.to(ring.material, {
+              opacity: 0.6,
+              duration: 0.5
+            });
+          }
+        });
+      });
+
+      // 정리
+      setTimeout(() => {
+        ripple.remove();
+        burst.remove();
+      }, 1000);
+    }
+
+    // ===== Meteor System =====
+    function startMeteorShower() {
+      // 5~15초 간격으로 유성 생성
+      function scheduleNextMeteor() {
+        const delay = 5000 + Math.random() * 10000;
+        setTimeout(() => {
+          if (document.visibilityState === 'visible') {
+            createMeteor();
+          }
+          scheduleNextMeteor();
+        }, delay);
+      }
+      scheduleNextMeteor();
+    }
+
+    function createMeteor() {
+      // 현재 활성 섹션의 카드들 가져오기
+      const activeSection = document.querySelector('.section-cards.active');
+      if (!activeSection) return;
+
+      const cards = activeSection.querySelectorAll('.shortcut-card');
+      if (cards.length === 0) return;
+
+      // 랜덤 카드 선택
+      const targetCard = cards[Math.floor(Math.random() * cards.length)];
+      const cardRect = targetCard.getBoundingClientRect();
+
+      // 카드 중심 좌표
+      const targetX = cardRect.left + cardRect.width / 2;
+      const targetY = cardRect.top + cardRect.height / 2;
+
+      // 유성 시작 위치 (화면 밖 랜덤)
+      const side = Math.floor(Math.random() * 3); // 0: 위, 1: 오른쪽, 2: 위-오른쪽 대각선
+      let startX, startY;
+
+      if (side === 0) {
+        startX = Math.random() * window.innerWidth;
+        startY = -50;
+      } else if (side === 1) {
+        startX = window.innerWidth + 50;
+        startY = Math.random() * window.innerHeight * 0.5;
+      } else {
+        startX = window.innerWidth * 0.5 + Math.random() * window.innerWidth * 0.5;
+        startY = -50;
+      }
+
+      // 유성 생성
+      const meteor = document.createElement('div');
+      meteor.className = 'meteor';
+      meteor.style.left = startX + 'px';
+      meteor.style.top = startY + 'px';
+
+      // 유성 방향에 따른 꼬리 회전
+      const angle = Math.atan2(targetY - startY, targetX - startX);
+      meteor.style.transform = `rotate(${angle}rad)`;
+
+      document.body.appendChild(meteor);
+
+      // 유성 애니메이션
+      const duration = 0.8 + Math.random() * 0.4;
+
+      gsap.to(meteor, {
+        left: targetX,
+        top: targetY,
+        duration: duration,
+        ease: 'power2.in',
+        onComplete: () => {
+          // 충돌!
+          meteor.remove();
+          createImpactEffect(targetX, targetY);
+          shakeCard(targetCard);
+        }
+      });
+    }
+
+    function createImpactEffect(x, y) {
+      // 조명 플래시
+      glowIntensity = Math.min(glowIntensity + 0.5, 1.2);
+
+      // 스파크 생성
+      const spark = document.createElement('div');
+      spark.className = 'impact-spark';
+      spark.style.left = x + 'px';
+      spark.style.top = y + 'px';
+      document.body.appendChild(spark);
+
+      const particleCount = 8;
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'spark-particle';
+        const angle = (i / particleCount) * Math.PI * 2;
+        const distance = 30 + Math.random() * 40;
+
+        spark.appendChild(particle);
+
+        gsap.fromTo(particle,
+          { x: 0, y: 0, scale: 1, opacity: 1 },
+          {
+            x: Math.cos(angle) * distance,
+            y: Math.sin(angle) * distance,
+            scale: 0,
+            opacity: 0,
+            duration: 0.5,
+            ease: 'power2.out'
+          }
+        );
+      }
+
+      setTimeout(() => spark.remove(), 600);
+    }
+
+    function shakeCard(card) {
+      // 이미 흔들리는 중이면 스킵
+      if (card.classList.contains('shake')) return;
+
+      card.classList.add('shake');
+
+      // 애니메이션 끝나면 클래스 제거
+      setTimeout(() => {
+        card.classList.remove('shake');
+      }, 600);
+    }
+
+    function showTunnelSubmenu() {
+      document.getElementById('tunnel-submenu').classList.add('active');
+    }
+
+    function hideTunnelSubmenu() {
+      document.getElementById('tunnel-submenu').classList.remove('active');
+    }
+
+    function toggleTunnelSubmenu() {
+      document.getElementById('tunnel-submenu').classList.toggle('active');
+    }
+
+    init();
+  </script>
+</body>
+</html>
