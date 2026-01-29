@@ -2549,6 +2549,61 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
       });
 
+      // Touch Swipe (모바일)
+      let touchStartY = 0;
+      let touchStartX = 0;
+      let touchStartTime = 0;
+
+      document.addEventListener('touchstart', e => {
+        if (e.target.closest('.shortcut-card') ||
+            e.target.closest('.floating-btn') ||
+            e.target.closest('#settings-menu') ||
+            e.target.closest('#tunnel-submenu') ||
+            e.target.closest('.modal-overlay')) return;
+
+        touchStartY = e.touches[0].clientY;
+        touchStartX = e.touches[0].clientX;
+        touchStartTime = Date.now();
+      }, { passive: true });
+
+      document.addEventListener('touchmove', e => {
+        if (touchStartY === 0) return;
+
+        const deltaY = touchStartY - e.touches[0].clientY;
+
+        // 터널 움직임 효과
+        targetSpeed = deltaY * 0.1;
+        glowIntensity = Math.min(1, glowIntensity + Math.abs(deltaY) * 0.002);
+      }, { passive: true });
+
+      document.addEventListener('touchend', e => {
+        if (touchStartY === 0) return;
+
+        const touchEndY = e.changedTouches[0].clientY;
+        const touchEndX = e.changedTouches[0].clientX;
+        const deltaY = touchStartY - touchEndY;
+        const deltaX = touchStartX - touchEndX;
+        const deltaTime = Date.now() - touchStartTime;
+
+        // 수직 스와이프만 감지 (수평보다 수직이 더 클 때)
+        if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 50) {
+          const velocity = Math.abs(deltaY) / deltaTime;
+
+          if (velocity > 0.3 || Math.abs(deltaY) > 100) {
+            if (deltaY > 0) {
+              goToSection(currentSection + 1); // 위로 스와이프 = 다음
+            } else {
+              goToSection(currentSection - 1); // 아래로 스와이프 = 이전
+            }
+          }
+        }
+
+        // 리셋
+        touchStartY = 0;
+        touchStartX = 0;
+        targetSpeed = 0;
+      }, { passive: true });
+
       // Add button
       document.getElementById('add-btn').addEventListener('click', () => openModal());
 
