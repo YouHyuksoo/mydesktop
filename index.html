@@ -2440,11 +2440,11 @@
 
       setTimeout(() => {
         isTransitioning = false;
-        // 캐러셀 모드면 업데이트
+        // 캐러셀 모드면 즉시 위치 설정
         if (cardLayout === 'carousel') {
           carouselIndex = 0;
           updateCarouselUI();
-          updateCarouselPosition();
+          updateCarouselPosition(true); // 즉시 위치 설정
         }
       }, 600);
 
@@ -2540,11 +2540,11 @@
 
       updateCardsDepth();
 
-      // 캐러셀 모드면 초기화
+      // 캐러셀 모드면 초기화 (즉시 위치 설정)
       if (cardLayout === 'carousel') {
         carouselIndex = 0;
         updateCarouselUI();
-        updateCarouselPosition();
+        updateCarouselPosition(true);
       } else {
         hideCarouselUI();
       }
@@ -2724,40 +2724,53 @@
       document.getElementById('carousel-dots').classList.remove('visible');
     }
 
-    function updateCarouselPosition() {
+    function updateCarouselPosition(immediate = false) {
       const activeSection = document.querySelector('.section-cards.active');
       if (!activeSection || cardLayout !== 'carousel') return;
 
       const cards = activeSection.querySelectorAll('.shortcut-card');
+      const cardCount = cards.length;
+      if (cardCount === 0) return;
+
       const isMobile = window.innerWidth <= 768;
+      const radius = isMobile ? 200 : 300; // 원의 반지름
+      const angleStep = (Math.PI * 2) / cardCount; // 각 카드 간 각도
 
       cards.forEach((card, i) => {
-        const offset = i - carouselIndex;
+        // 현재 카드의 각도 계산 (carouselIndex가 앞에 오도록)
+        const angle = angleStep * (i - carouselIndex);
+
         let x = 0, y = 0, z = 0, scale = 1, rotateY = 0, opacity = 1;
 
         if (isMobile) {
-          // 모바일: 세로 캐러셀
-          y = offset * 180;
-          z = -Math.abs(offset) * 100;
-          scale = offset === 0 ? 1 : Math.max(0.6, 1 - Math.abs(offset) * 0.2);
-          opacity = offset === 0 ? 1 : Math.max(0.3, 1 - Math.abs(offset) * 0.4);
+          // 모바일: 세로 원형 캐러셀 (위아래로 회전)
+          y = Math.sin(angle) * radius;
+          z = Math.cos(angle) * radius - radius; // 앞쪽이 z=0
+          const normalizedZ = (z + radius) / radius; // 0~1 범위
+          scale = 0.5 + 0.5 * normalizedZ;
+          opacity = 0.2 + 0.8 * normalizedZ;
         } else {
-          // 데스크톱: 가로 캐러셀
-          x = offset * 200;
-          z = -Math.abs(offset) * 100;
-          scale = offset === 0 ? 1 : Math.max(0.7, 1 - Math.abs(offset) * 0.15);
-          rotateY = offset * -15;
-          opacity = offset === 0 ? 1 : Math.max(0.4, 1 - Math.abs(offset) * 0.3);
+          // 데스크톱: 가로 원형 캐러셀 (좌우로 회전)
+          x = Math.sin(angle) * radius;
+          z = Math.cos(angle) * radius - radius;
+          rotateY = -angle * (180 / Math.PI); // 라디안을 도로 변환
+          const normalizedZ = (z + radius) / radius;
+          scale = 0.5 + 0.5 * normalizedZ;
+          opacity = 0.2 + 0.8 * normalizedZ;
         }
 
-        const zIndex = 100 - Math.abs(offset);
-        const pointerEvents = Math.abs(offset) <= 1 ? 'auto' : 'none';
+        const zIndex = Math.round(50 + 50 * ((z + radius) / radius));
+        const pointerEvents = z > -radius * 0.5 ? 'auto' : 'none';
 
-        gsap.to(card, {
-          x, y, z, scale, rotateY, opacity, zIndex,
-          duration: 0.5,
-          ease: 'power2.out'
-        });
+        if (immediate) {
+          gsap.set(card, { x, y, z, scale, rotateY, opacity, zIndex });
+        } else {
+          gsap.to(card, {
+            x, y, z, scale, rotateY, opacity, zIndex,
+            duration: 0.5,
+            ease: 'power2.out'
+          });
+        }
         card.style.pointerEvents = pointerEvents;
       });
 
@@ -2772,9 +2785,14 @@
       if (!activeSection) return;
 
       const cards = activeSection.querySelectorAll('.shortcut-card');
-      const maxIndex = cards.length - 1;
+      const cardCount = cards.length;
+      if (cardCount === 0) return;
 
-      carouselIndex = Math.max(0, Math.min(index, maxIndex));
+      // 순환 처리 (360도 회전)
+      if (index < 0) index = cardCount - 1;
+      if (index >= cardCount) index = 0;
+
+      carouselIndex = index;
       updateCarouselPosition();
     }
 
