@@ -759,6 +759,7 @@
     .neon-preview { background: #000; box-shadow: inset 0 0 8px var(--accent); }
     .hermes-preview { background: linear-gradient(135deg, #f37021, #cf5a28, #8b4513); }
     .cyberpunk-preview { background: linear-gradient(135deg, #ff00ff, #00ffff, #ff0080); }
+    .apple-preview { background: linear-gradient(135deg, #f5f5f7, #e8e8ed, #d2d2d7); }
 
     /* ===== Card Styles ===== */
     .shortcut-card.style-rainbow {
@@ -810,6 +811,26 @@
       background: linear-gradient(145deg, rgba(255,0,128,0.25), rgba(0,255,255,0.15));
       border-color: #ff00ff;
       box-shadow: 0 0 30px rgba(255,0,255,0.5), 0 0 30px rgba(0,255,255,0.3), 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    .shortcut-card.style-apple {
+      background: rgba(255,255,255,0.9);
+      border: 1px solid rgba(0,0,0,0.1);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .shortcut-card.style-apple .shortcut-title {
+      color: #1d1d1f;
+    }
+
+    .shortcut-card.style-apple .shortcut-url {
+      color: #86868b;
+    }
+
+    .section-cards.active .shortcut-card.style-apple:hover {
+      background: rgba(255,255,255,0.95);
+      border-color: rgba(0,0,0,0.15);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15), 0 2px 10px rgba(0,0,0,0.1);
     }
 
     .settings-submenu-trigger {
@@ -1535,6 +1556,10 @@
       <span class="style-preview cyberpunk-preview"></span>
       <span>사이버펑크</span>
     </div>
+    <div class="card-style-option" data-style="apple">
+      <span class="style-preview apple-preview"></span>
+      <span>애플</span>
+    </div>
   </div>
 
   <div id="toast">복사됨!</div>
@@ -1650,7 +1675,7 @@
     let glowIntensity = 0;
     let glowTheme = 'gold';
     let iconColorMode = 'brand'; // 'brand' or 'white'
-    let cardStyle = 'glass'; // glass, rainbow, gradient, dark, neon, hermes, cyberpunk
+    let cardStyle = 'glass'; // glass, rainbow, gradient, dark, neon, hermes, cyberpunk, apple
 
     const GLOW_THEMES = {
       gold: {
@@ -2630,7 +2655,7 @@
       renderCards();
       hideCardStyleSubmenu();
       hideSettingsMenu();
-      const styleNames = { glass: '글래스', rainbow: '무지개', gradient: '그라데이션', dark: '다크', neon: '네온', hermes: '헤르메스', cyberpunk: '사이버펑크' };
+      const styleNames = { glass: '글래스', rainbow: '무지개', gradient: '그라데이션', dark: '다크', neon: '네온', hermes: '헤르메스', cyberpunk: '사이버펑크', apple: '애플' };
       showToast(`🃏 ${styleNames[style]}`);
     }
 
@@ -2874,6 +2899,27 @@
           e.stopPropagation();
           changeCardStyle(opt.dataset.style);
         });
+      });
+
+      // 설정 메뉴 영역 벗어나면 서브메뉴 닫기
+      document.getElementById('settings-menu').addEventListener('mouseleave', e => {
+        // 서브메뉴로 이동하는 경우는 제외
+        const toElement = e.relatedTarget;
+        if (toElement && (toElement.closest('#tunnel-submenu') || toElement.closest('#card-style-submenu'))) return;
+        hideTunnelSubmenu();
+        hideCardStyleSubmenu();
+      });
+
+      document.getElementById('tunnel-submenu').addEventListener('mouseleave', e => {
+        const toElement = e.relatedTarget;
+        if (toElement && toElement.closest('#settings-menu')) return;
+        hideTunnelSubmenu();
+      });
+
+      document.getElementById('card-style-submenu').addEventListener('mouseleave', e => {
+        const toElement = e.relatedTarget;
+        if (toElement && toElement.closest('#settings-menu')) return;
+        hideCardStyleSubmenu();
       });
 
       document.addEventListener('click', e => {
