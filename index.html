@@ -2896,13 +2896,11 @@
       document.getElementById('menu-reset').addEventListener('click', resetShortcuts);
       document.getElementById('menu-icon-color').addEventListener('click', toggleIconColor);
 
-      // Tunnel submenu
+      // Tunnel submenu - 클릭으로만 열기/닫기
       document.getElementById('menu-tunnel').addEventListener('click', e => {
         e.stopPropagation();
+        hideCardStyleSubmenu();
         toggleTunnelSubmenu();
-      });
-      document.getElementById('menu-tunnel').addEventListener('mouseenter', () => {
-        showTunnelSubmenu();
       });
 
       document.querySelectorAll('.tunnel-option').forEach(opt => {
@@ -2912,15 +2910,11 @@
         });
       });
 
-      // Card style submenu
+      // Card style submenu - 클릭으로만 열기/닫기
       document.getElementById('menu-card-style').addEventListener('click', e => {
         e.stopPropagation();
+        hideTunnelSubmenu();
         toggleCardStyleSubmenu();
-        hideTunnelSubmenu();
-      });
-      document.getElementById('menu-card-style').addEventListener('mouseenter', () => {
-        showCardStyleSubmenu();
-        hideTunnelSubmenu();
       });
 
       document.querySelectorAll('.card-style-option').forEach(opt => {
@@ -2930,27 +2924,7 @@
         });
       });
 
-      // 설정 메뉴 영역 벗어나면 서브메뉴 닫기
-      document.getElementById('settings-menu').addEventListener('mouseleave', e => {
-        // 서브메뉴로 이동하는 경우는 제외
-        const toElement = e.relatedTarget;
-        if (toElement && (toElement.closest('#tunnel-submenu') || toElement.closest('#card-style-submenu'))) return;
-        hideTunnelSubmenu();
-        hideCardStyleSubmenu();
-      });
-
-      document.getElementById('tunnel-submenu').addEventListener('mouseleave', e => {
-        const toElement = e.relatedTarget;
-        if (toElement && toElement.closest('#settings-menu')) return;
-        hideTunnelSubmenu();
-      });
-
-      document.getElementById('card-style-submenu').addEventListener('mouseleave', e => {
-        const toElement = e.relatedTarget;
-        if (toElement && toElement.closest('#settings-menu')) return;
-        hideCardStyleSubmenu();
-      });
-
+      // 바깥 클릭 시 모든 메뉴 닫기
       document.addEventListener('click', e => {
         if (!e.target.closest('#settings-menu') && !e.target.closest('#settings-btn') && !e.target.closest('#tunnel-submenu') && !e.target.closest('#card-style-submenu')) {
           hideSettingsMenu();
