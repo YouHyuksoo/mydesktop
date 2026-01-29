@@ -2421,13 +2421,7 @@
 
       setTimeout(() => {
         isTransitioning = false;
-        // 캐러셀 모드면 즉시 위치 설정
-        if (cardLayout === 'carousel') {
-          carouselIndex = 0;
-          updateCarouselUI();
-          updateCarouselPosition(true); // 즉시 위치 설정
-        }
-      }, 600);
+      }, 800);
 
       // 스크롤 힌트 숨기기
       gsap.to('#scroll-hint', { opacity: 0, duration: 0.5 });
@@ -2469,6 +2463,12 @@
           onComplete: () => {
             if (offset === 0) {
               section.classList.add('active');
+              // 캐러셀 모드면 애니메이션 완료 후 즉시 위치 설정
+              if (cardLayout === 'carousel') {
+                carouselIndex = 0;
+                updateCarouselUI();
+                updateCarouselPosition(true);
+              }
             }
             // 애니메이션 끝난 후 멀리 있는 섹션 숨김
             if (absOffset > 1) {
