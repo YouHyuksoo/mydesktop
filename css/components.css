@@ -1089,12 +1089,17 @@
 .color-option.selected { border-color: white; }
 
 .icon-help {
-  margin-top: 6px;
+  margin-top: 8px;
+  line-height: 1.6;
 }
 
 .icon-help small {
   color: var(--text-secondary);
   font-size: 11px;
+}
+
+.icon-help strong {
+  color: var(--accent);
 }
 
 .modal-actions {
