@@ -1,0 +1,270 @@
+/**
+ * @file js/cards.js
+ * @description 카드 생성 및 렌더링 관련 함수 모음
+ *
+ * 초보자 가이드:
+ * 1. **주요 개념**: 바로가기 카드를 DOM 요소로 생성하고 화면에 렌더링
+ * 2. **사용 방법**: App.Cards.renderCards() 호출로 전체 카드 갱신
+ * 3. **의존성**: App.state, App.config, App.Carousel 필요
+ */
+
+(function(App) {
+  'use strict';
+
+  // ===== 무지개 색상 팔레트 =====
+  const RAINBOW_COLORS = [
+    { r: 255, g: 107, b: 107 },  // red
+    { r: 255, g: 159, b: 67 },   // orange
+    { r: 255, g: 215, b: 0 },    // yellow
+    { r: 78, g: 205, b: 196 },   // teal
+    { r: 69, g: 183, b: 209 },   // blue
+    { r: 165, g: 94, b: 234 },   // purple
+    { r: 255, g: 107, b: 182 },  // pink
+    { r: 38, g: 222, b: 129 },   // green
+  ];
+
+  /**
+   * URL에서 도메인 추출
+   * @param {string} url - 전체 URL
+   * @returns {string} 도메인 또는 원본 URL
+   */
+  function getDomain(url) {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return url;
+    }
+  }
+
+  /**
+   * SVG 아이콘 라이브러리에서 아이콘 반환
+   * @param {string} name - 아이콘 이름
+   * @param {string} color - 아이콘 색상 (기본: white)
+   * @returns {string} SVG HTML 문자열
+   */
+  function getSvgIcon(name, color = 'white') {
+    const icons = {
+      calculator: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2zm4 8h-2v-6h2v6zm0-8h-2V7h2v2zm-8 8H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2z"/></svg>`,
+      settings: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`,
+      store: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M18.36 9l.6 3H5.04l.6-3h12.72M20 4H4v2h16V4zm0 3H4l-1 5v2h1v6h10v-6h4v6h2v-6h1v-2l-1-5zM6 18v-4h6v4H6z"/></svg>`,
+      clock: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>`,
+      scissors: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3z"/></svg>`,
+      weather: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>`,
+      image: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>`,
+      edge: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M21 12c0-1.54-.37-3-.99-4.3-.62 1.1-.99 2.37-.99 3.71 0 2.87 1.63 5.38 4 6.63-.65 1.27-1.54 2.39-2.63 3.29C17.75 17.64 15.05 15 12 15c-2.21 0-4.21.9-5.66 2.34C4.9 15.9 4 13.9 4 12c0-4.42 3.58-8 8-8 2.03 0 3.89.76 5.3 2H12c-3.31 0-6 2.69-6 6 0 2.21 1.79 4 4 4 1.54 0 2.87-.87 3.54-2.15.42.1.86.15 1.31.15 1.55 0 2.98-.56 4.08-1.49.07.49.07.99.07 1.49 0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2c2.72 0 5.19 1.09 6.99 2.86C18.35 4.33 17.71 4 17 4c-1.66 0-3 1.34-3 3s1.34 3 3 3c.39 0 .76-.08 1.1-.21.58.93.9 2.02.9 3.21z"/></svg>`,
+      word: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M6 2h8l6 6v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2zm8 7h5l-5-5v5zM8.5 18h1.2l1.3-5.3 1.3 5.3h1.2l1.8-7h-1.3l-1.1 5-1.3-5h-1.2l-1.3 5-1.1-5H7.7l1.8 7z"/></svg>`,
+      excel: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M6 2h8l6 6v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2zm8 7h5l-5-5v5zM8 18h1.5l1.5-2.5 1.5 2.5H14l-2.25-3.5L14 11h-1.5l-1.5 2.5L9.5 11H8l2.25 3.5L8 18z"/></svg>`,
+      powerpoint: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M6 2h8l6 6v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2zm8 7h5l-5-5v5zM8 18v-7h3c1.66 0 3 1.34 3 3s-1.34 3-3 3H9.5v1H8zm1.5-2.5H11c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5H9.5v3z"/></svg>`,
+      outlook: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/><path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></svg>`,
+      onenote: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M6 2h8l6 6v12c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2zm8 7h5l-5-5v5zM8 18v-7h1.5l2.5 4.5V11H14v7h-1.5L10 13.5V18H8z"/></svg>`,
+      teams: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M19.19 8.77q-.46 0-.86-.18-.39-.18-.69-.48-.29-.31-.46-.71-.16-.41-.16-.86 0-.46.16-.85.17-.4.46-.7.3-.3.7-.47.39-.18.85-.18.46 0 .85.18.4.17.7.47.3.3.47.7.17.4.17.85 0 .45-.17.86-.17.4-.47.71-.3.3-.7.48-.39.18-.85.18zm-5.92-1.12q-.69 0-1.29-.26-.59-.27-1.04-.72-.44-.46-.69-1.06-.26-.6-.26-1.3 0-.69.26-1.29.25-.6.69-1.05.45-.44 1.04-.7.6-.26 1.3-.26.69 0 1.29.26.6.26 1.04.7.45.45.7 1.05.26.6.26 1.3 0 .69-.26 1.29-.25.6-.7 1.05-.44.45-1.04.72-.6.26-1.29.26zm8.08 10.35H14.7V10H21c.55 0 1 .45 1 1v6c0 .55-.45 1-1 1h-.65zM3 19v-8c0-.55.45-1 1-1h7v9H4c-.55 0-1-.45-1-1zm9-9v10h4V10h-4z"/></svg>`,
+      chatgpt: `<svg viewBox="0 0 24 24" fill="${color}" width="36" height="36"><path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08-4.778 2.758a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/></svg>`
+    };
+    return icons[name] || `<span style="color:${color};font-size:24px;font-weight:bold;">${name[0].toUpperCase()}</span>`;
+  }
+
+  /**
+   * 바로가기 아이콘 콘텐츠 생성
+   * @param {Object} shortcut - 바로가기 객체
+   * @returns {string} 아이콘 HTML 문자열
+   */
+  function getIconContent(shortcut) {
+    const icon = shortcut.icon;
+    if (!icon) {
+      return `<span style="color:${shortcut.color};font-size:24px;font-weight:bold;">${shortcut.title[0].toUpperCase()}</span>`;
+    }
+
+    // Simple Icons (si:name)
+    if (icon.startsWith('si:')) {
+      const name = icon.replace('si:', '');
+      const color = App.state.iconColorMode === 'white' ? 'white' : shortcut.color;
+      return `<img src="https://cdn.simpleicons.org/${name}/${color.replace('#', '')}" alt="${shortcut.title}" onerror="this.parentElement.innerHTML='${shortcut.title[0].toUpperCase()}'">`;
+    }
+
+    // URL 이미지
+    if (icon.startsWith('http')) {
+      return `<img src="${icon}" alt="${shortcut.title}" onerror="this.parentElement.innerHTML='${shortcut.title[0].toUpperCase()}'">`;
+    }
+
+    // SVG 아이콘
+    if (icon.startsWith('svg:')) {
+      const name = icon.replace('svg:', '');
+      const color = App.state.iconColorMode === 'white' ? 'white' : shortcut.color;
+      return getSvgIcon(name, color);
+    }
+
+    return icon;
+  }
+
+  /**
+   * 단일 카드 DOM 요소 생성
+   * @param {Object} shortcut - 바로가기 데이터
+   * @param {number} index - 카드 인덱스 (무지개 색상용)
+   * @returns {HTMLElement} 카드 DOM 요소
+   */
+  function createCard(shortcut, index = 0) {
+    const card = document.createElement('div');
+    card.className = 'shortcut-card';
+
+    if (App.state.cardStyle !== 'glass') {
+      card.classList.add('style-' + App.state.cardStyle);
+    }
+
+    // 무지개 색상 적용
+    if (App.state.cardStyle === 'rainbow') {
+      const color = RAINBOW_COLORS[index % RAINBOW_COLORS.length];
+      card.style.setProperty('--rainbow-r', color.r);
+      card.style.setProperty('--rainbow-g', color.g);
+      card.style.setProperty('--rainbow-b', color.b);
+    }
+
+    card.dataset.id = shortcut.id;
+
+    const iconContent = getIconContent(shortcut);
+
+    card.innerHTML = `
+      <div class="shortcut-icon">${iconContent}</div>
+      <div class="shortcut-title">${shortcut.title}</div>
+      <div class="shortcut-url">${getDomain(shortcut.url)}</div>
+      <div class="card-actions">
+        <button class="card-btn edit-btn" title="수정">
+          <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+        </button>
+        <button class="card-btn delete-btn" title="삭제">
+          <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        </button>
+      </div>
+    `;
+
+    // 카드 색상을 글로우 효과로 활용
+    card.style.setProperty('--card-color', shortcut.color);
+
+    // 수정 버튼
+    card.querySelector('.edit-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      App.openModal(shortcut.id);
+    });
+
+    // 삭제 버튼
+    card.querySelector('.delete-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (confirm('삭제할까요?')) {
+        App.state.shortcuts = App.state.shortcuts.filter(x => x.id !== shortcut.id);
+        App.saveShortcuts();
+        renderCards();
+      }
+    });
+
+    // 마우스 다운 - 눌림 효과
+    card.addEventListener('mousedown', () => {
+      const parent = card.closest('.section-cards');
+      if (!parent.classList.contains('active')) return;
+      card.classList.add('pressing');
+    });
+
+    // 마우스 업 - 눌림 해제
+    card.addEventListener('mouseup', () => {
+      card.classList.remove('pressing');
+    });
+
+    card.addEventListener('mouseleave', () => {
+      card.classList.remove('pressing');
+    });
+
+    // 클릭 - 열기
+    card.addEventListener('click', () => {
+      const parent = card.closest('.section-cards');
+      if (!parent.classList.contains('active')) return;
+      if (card.classList.contains('opening')) return; // 중복 클릭 방지
+
+      card.classList.remove('pressing');
+      card.classList.add('opening');
+
+      // 짧은 애니메이션 후 새 탭에서 열기
+      gsap.to(card, {
+        scale: 1.05, duration: 0.15,
+        ease: 'power2.out',
+        onComplete: () => {
+          // 새 탭에서 열기
+          window.open(shortcut.url, '_blank');
+
+          // 카드 상태 복원
+          setTimeout(() => {
+            card.classList.remove('opening');
+            gsap.to(card, {
+              scale: 1, duration: 0.3,
+              ease: 'power2.out'
+            });
+          }, 300);
+        }
+      });
+    });
+
+    card.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      const parent = card.closest('.section-cards');
+      if (!parent.classList.contains('active')) return;
+      App.showContextMenu(e, shortcut.id);
+    });
+
+    return card;
+  }
+
+  /**
+   * 모든 섹션의 카드를 3D 깊이로 렌더링
+   */
+  function renderAllCards() {
+    const space = document.getElementById('cards-3d-space');
+    space.innerHTML = '';
+
+    App.config.SECTIONS.forEach((section, sectionIndex) => {
+      const sectionDiv = document.createElement('div');
+      sectionDiv.className = 'section-cards';
+
+      if (App.state.cardLayout === 'carousel') {
+        sectionDiv.classList.add('carousel-layout');
+      }
+
+      sectionDiv.dataset.section = sectionIndex;
+      sectionDiv.dataset.label = section.name;
+
+      const sectionShortcuts = App.state.shortcuts.filter(s => s.layer === sectionIndex);
+      sectionShortcuts.forEach((shortcut, i) => {
+        const card = createCard(shortcut, i);
+        sectionDiv.appendChild(card);
+      });
+
+      space.appendChild(sectionDiv);
+    });
+
+    App.Sections.updateCardsDepth();
+
+    // 캐러셀 모드면 초기화 (즉시 위치 설정)
+    if (App.state.cardLayout === 'carousel') {
+      App.state.carouselIndex = 0;
+      App.Carousel.updateCarouselUI();
+      App.Carousel.updateCarouselPosition(true);
+    } else {
+      App.Carousel.hideCarouselUI();
+    }
+  }
+
+  /**
+   * 카드 렌더링 (renderAllCards 래퍼)
+   */
+  function renderCards() {
+    renderAllCards();
+  }
+
+  // ===== App.Cards로 export =====
+  App.Cards = {
+    createCard: createCard,
+    renderCards: renderCards,
+    renderAllCards: renderAllCards,
+    getIconContent: getIconContent,
+    getSvgIcon: getSvgIcon,
+    getDomain: getDomain,
+    RAINBOW_COLORS: RAINBOW_COLORS
+  };
+
+})(window.App = window.App || {});
