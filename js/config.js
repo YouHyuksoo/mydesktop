@@ -21,6 +21,7 @@ App.Config = (function() {
   /**
    * 섹션 정의 - 대시보드의 카테고리들
    * @type {Array<{id: number, name: string, subtitle: string}>}
+   * @deprecated SECTIONS는 이제 App.Categories.getAll()을 사용
    */
   const SECTIONS = [
     { id: 0, name: 'FAVORITES', subtitle: 'Your most used sites' },
@@ -29,6 +30,20 @@ App.Config = (function() {
     { id: 3, name: 'ENTERTAINMENT', subtitle: 'Relax & enjoy' },
     { id: 4, name: 'DESKTOP', subtitle: 'Windows apps & tools' },
     { id: 5, name: 'OFFICE', subtitle: 'Microsoft Office apps' }
+  ];
+
+  /**
+   * 기본 카테고리 정의 - 아이콘 포함
+   * 사용자 정의 카테고리는 id가 100 이상
+   * @type {Array<{id: number, name: string, subtitle: string, icon: string}>}
+   */
+  const DEFAULT_CATEGORIES = [
+    { id: 0, name: 'FAVORITES', subtitle: 'Your most used sites', icon: '⭐' },
+    { id: 1, name: 'SOCIAL', subtitle: 'Stay connected', icon: '💬' },
+    { id: 2, name: 'WORK', subtitle: 'Productivity tools', icon: '💼' },
+    { id: 3, name: 'ENTERTAINMENT', subtitle: 'Relax & enjoy', icon: '🎮' },
+    { id: 4, name: 'DESKTOP', subtitle: 'Windows apps & tools', icon: '🖥️' },
+    { id: 5, name: 'OFFICE', subtitle: 'Microsoft Office apps', icon: '📊' }
   ];
 
   /**
@@ -49,7 +64,7 @@ App.Config = (function() {
     { id: '4', title: '카카오톡', url: 'kakaotalk://', color: '#FEE500', icon: 'si:kakaotalk', layer: 1 },
     { id: '5', title: 'Twitter', url: 'https://twitter.com', color: '#000000', icon: 'si:x', layer: 1 },
     { id: '6', title: 'Discord', url: 'https://discord.com', color: '#5865F2', icon: 'si:discord', layer: 1 },
-    { id: '13', title: 'LinkedIn', url: 'https://linkedin.com', color: '#0A66C2', icon: 'si:linkedin', layer: 1 },
+    { id: '13', title: 'LinkedIn', url: 'https://linkedin.com', color: '#0A66C2', icon: 'svg:linkedin', layer: 1 },
     { id: '7', title: 'GitHub', url: 'https://github.com', color: '#181717', icon: 'si:github', layer: 2 },
     { id: '8', title: 'Notion', url: 'https://notion.so', color: '#000000', icon: 'si:notion', layer: 2 },
     { id: '9', title: 'Figma', url: 'https://figma.com', color: '#F24E1E', icon: 'si:figma', layer: 2 },
@@ -156,6 +171,7 @@ App.Config = (function() {
   // Public API
   return {
     SECTIONS: SECTIONS,
+    DEFAULT_CATEGORIES: DEFAULT_CATEGORIES,
     COLORS: COLORS,
     DEFAULT_SHORTCUTS: DEFAULT_SHORTCUTS,
     GLOW_THEMES: GLOW_THEMES,
@@ -164,3 +180,6 @@ App.Config = (function() {
     WARP: WARP
   };
 })();
+
+// 대문자/소문자 둘 다 지원
+App.config = App.Config;

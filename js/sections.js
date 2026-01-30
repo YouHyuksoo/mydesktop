@@ -15,6 +15,18 @@
   const DEPTH_SPACING = 600; // 섹션 간 Z 간격
 
   /**
+   * 현재 사용 가능한 카테고리(섹션) 목록 반환
+   * App.Categories가 있으면 동적 카테고리, 없으면 기본 SECTIONS 사용
+   * @returns {Array} 카테고리 배열
+   */
+  function getSections() {
+    if (App.Categories && typeof App.Categories.getAll === 'function') {
+      return App.Categories.getAll();
+    }
+    return App.config.SECTIONS;
+  }
+
+  /**
    * 특정 섹션으로 이동
    * @param {number} index - 이동할 섹션 인덱스
    * @param {number|null} forceDirection - 강제 방향 지정 (1: 앞으로, -1: 뒤로)
@@ -22,7 +34,7 @@
   function goToSection(index, forceDirection = null) {
     if (App.state.isTransitioning) return;
 
-    const SECTIONS = App.config.SECTIONS;
+    const SECTIONS = getSections();
 
     // 순환 처리 및 방향 계산
     let direction;
@@ -153,7 +165,8 @@
    * 섹션 정보 UI 업데이트
    */
   function updateSectionInfo() {
-    const section = App.config.SECTIONS[App.state.currentSection];
+    const SECTIONS = getSections();
+    const section = SECTIONS[App.state.currentSection];
     document.getElementById('section-title').textContent = section.name;
     document.getElementById('section-subtitle').textContent = section.subtitle;
   }
@@ -205,13 +218,29 @@
    */
   function createDepthIndicator() {
     const container = document.getElementById('depth-indicator');
-    App.config.SECTIONS.forEach((section, i) => {
+    const SECTIONS = getSections();
+
+    // 기존 내용 제거 (재생성 시)
+    container.innerHTML = '';
+
+    SECTIONS.forEach((section, i) => {
       const dot = document.createElement('div');
-      dot.className = 'depth-dot' + (i === 0 ? ' active' : '');
-      dot.dataset.label = section.name;
+      dot.className = 'depth-dot' + (i === App.state.currentSection ? ' active' : '');
+      dot.dataset.label = `${section.icon || ''} ${section.name}`;
       dot.addEventListener('click', () => goToSection(i));
       container.appendChild(dot);
     });
+
+    // + 버튼 추가 (인디케이터 아래에 위치)
+    const addBtn = document.createElement('button');
+    addBtn.className = 'depth-add-btn';
+    addBtn.id = 'depth-add-btn';
+    addBtn.title = '새 카테고리 추가';
+    addBtn.textContent = '+';
+    addBtn.addEventListener('click', () => {
+      if (App.Categories) App.Categories.openEditDialog();
+    });
+    container.appendChild(addBtn);
   }
 
   // ===== App.Sections로 export =====
@@ -222,6 +251,7 @@
     updateSectionInfo: updateSectionInfo,
     updateDepthIndicator: updateDepthIndicator,
     createDepthIndicator: createDepthIndicator,
+    getSections: getSections,
     DEPTH_SPACING: DEPTH_SPACING
   };
 

@@ -23,7 +23,8 @@ App.Storage = (function() {
   // localStorage 키 상수
   const KEYS = {
     SHORTCUTS: 'mydesktop-tunnel-shortcuts',
-    SETTINGS: 'mydesktop-tunnel-settings'
+    SETTINGS: 'mydesktop-tunnel-settings',
+    CATEGORIES: 'mydesktop-tunnel-categories'
   };
 
   /**
@@ -145,6 +146,40 @@ App.Storage = (function() {
   }
 
   /**
+   * 사용자 정의 카테고리 불러오기
+   * localStorage에 저장된 카테고리가 없으면 빈 배열 반환
+   *
+   * @returns {Array} 사용자 정의 카테고리 배열
+   */
+  function loadCategories() {
+    try {
+      const saved = localStorage.getItem(KEYS.CATEGORIES);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Failed to load categories:', e);
+    }
+    return [];
+  }
+
+  /**
+   * 사용자 정의 카테고리 저장
+   *
+   * @param {Array} categories - 저장할 카테고리 배열
+   * @returns {boolean} 저장 성공 여부
+   */
+  function saveCategories(categories) {
+    try {
+      localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(categories));
+      return true;
+    } catch (e) {
+      console.error('Failed to save categories:', e);
+      return false;
+    }
+  }
+
+  /**
    * 모든 데이터 삭제
    * 주의: 이 함수는 모든 저장된 데이터를 삭제합니다
    *
@@ -154,6 +189,7 @@ App.Storage = (function() {
     try {
       localStorage.removeItem(KEYS.SHORTCUTS);
       localStorage.removeItem(KEYS.SETTINGS);
+      localStorage.removeItem(KEYS.CATEGORIES);
       return true;
     } catch (e) {
       console.error('Failed to clear storage:', e);
@@ -167,8 +203,27 @@ App.Storage = (function() {
     saveShortcuts: saveShortcuts,
     loadSettings: loadSettings,
     saveSettings: saveSettings,
+    loadCategories: loadCategories,
+    saveCategories: saveCategories,
     resetShortcuts: resetShortcuts,
     clearAll: clearAll,
     KEYS: KEYS
   };
 })();
+
+// 편의 alias - App.saveSettings() 같은 직접 호출 지원
+App.saveSettings = function() {
+  const settings = {
+    tunnelShape: App.State.tunnelShape,
+    glowTheme: App.State.glowTheme,
+    iconColorMode: App.State.iconColorMode,
+    cardStyle: App.State.cardStyle,
+    spaceType: App.State.spaceType,
+    cardLayout: App.State.cardLayout
+  };
+  return App.Storage.saveSettings(settings);
+};
+
+App.saveShortcuts = function() {
+  return App.Storage.saveShortcuts(App.State.shortcuts);
+};

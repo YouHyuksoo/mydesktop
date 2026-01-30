@@ -105,6 +105,166 @@
     }, 1000);
   }
 
+  // ===== 바로가기 관리 함수들 =====
+
+  /**
+   * 바로가기 저장
+   */
+  function saveShortcut() {
+    const title = document.getElementById('shortcut-title').value.trim();
+    const url = document.getElementById('shortcut-url').value.trim();
+    const layer = parseInt(document.getElementById('shortcut-layer').value);
+    const icon = document.getElementById('shortcut-icon').value.trim();
+
+    if (!title || !url) {
+      App.showToast('제목과 URL을 입력해주세요');
+      return;
+    }
+
+    if (App.State.editingId) {
+      // 수정
+      const idx = App.State.shortcuts.findIndex(x => x.id === App.State.editingId);
+      if (idx >= 0) {
+        App.State.shortcuts[idx] = {
+          ...App.State.shortcuts[idx],
+          title, url, layer, icon,
+          color: App.State.selectedColor
+        };
+      }
+    } else {
+      // 새로 추가
+      App.State.shortcuts.push({
+        id: Date.now().toString(),
+        title, url, layer, icon,
+        color: App.State.selectedColor
+      });
+    }
+
+    App.saveShortcuts();
+    App.Cards.renderCards();
+    App.UI.closeModal();
+    App.showToast(App.State.editingId ? '수정 완료!' : '추가 완료!');
+  }
+
+  /**
+   * 바로가기 삭제
+   */
+  function deleteShortcut(id) {
+    if (confirm('삭제할까요?')) {
+      App.State.shortcuts = App.State.shortcuts.filter(x => x.id !== id);
+      App.saveShortcuts();
+      App.Cards.renderCards();
+      App.UI.closeModal();
+      App.showToast('삭제 완료!');
+    }
+  }
+
+  /**
+   * 프로토콜 URL 복사
+   */
+  function copyProtocolUrl() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      App.showToast('URL 복사됨!');
+    }).catch(() => {
+      App.showToast('복사 실패');
+    });
+    App.UI.hideSettingsMenu();
+  }
+
+  /**
+   * 바로가기 초기화
+   */
+  function resetShortcuts() {
+    if (confirm('모든 바로가기를 초기화할까요?')) {
+      App.State.shortcuts = App.Storage.resetShortcuts();
+      App.Cards.renderCards();
+      App.showToast('초기화 완료!');
+    }
+    App.UI.hideSettingsMenu();
+  }
+
+  /**
+   * 아이콘 색상 모드 전환
+   */
+  function toggleIconColor() {
+    App.State.iconColorMode = App.State.iconColorMode === 'brand' ? 'white' : 'brand';
+    App.saveSettings();
+    App.Cards.renderCards();
+    App.UI.updateIconColorLabel();
+    App.showToast(App.State.iconColorMode === 'brand' ? '🎨 브랜드 색상' : '⚪ 흰색 아이콘');
+    App.UI.hideSettingsMenu();
+  }
+
+  /**
+   * 공간 타입 전환
+   */
+  function changeSpaceType() {
+    const newType = App.State.spaceType === 'tunnel' ? 'warp' : 'tunnel';
+    App.State.spaceType = newType;
+    App.saveSettings();
+
+    App.Space.clearSpace();
+    if (newType === 'warp') {
+      App.Space.createCosmicWarp();
+    } else {
+      App.Space.createTunnel();
+    }
+
+    App.UI.updateSpaceMenu();
+    App.showToast(newType === 'warp' ? '🌌 코스믹 워프' : '🔺 클래식 터널');
+    App.UI.hideSettingsMenu();
+  }
+
+  /**
+   * 터널 모양 변경
+   */
+  function changeTunnelShape(shape) {
+    App.State.tunnelShape = shape;
+    App.saveSettings();
+
+    if (App.State.spaceType === 'tunnel') {
+      App.Space.clearSpace();
+      App.Space.createTunnel();
+    }
+
+    App.UI.updateTunnelMenu();
+    App.UI.hideTunnelSubmenu();
+
+    const shapeNames = {
+      triangle: '🔺 삼각형',
+      circle: '⭕ 원형',
+      square: '⬜ 사각형',
+      hexagon: '⬡ 육각형',
+      star: '⭐ 별',
+      infinity: '∞ 무한'
+    };
+    App.showToast(shapeNames[shape] || shape);
+  }
+
+  /**
+   * 카드 스타일 변경
+   */
+  function changeCardStyle(style) {
+    App.State.cardStyle = style;
+    App.saveSettings();
+    App.Cards.renderCards();
+    App.UI.updateCardStyleMenu();
+    App.UI.hideCardStyleSubmenu();
+
+    const styleNames = {
+      glass: '🔮 글래스',
+      rainbow: '🌈 무지개',
+      gradient: '🎨 그라데이션',
+      dark: '🌑 다크',
+      neon: '💡 네온',
+      hermes: '🧡 헤르메스',
+      cyberpunk: '🤖 사이버펑크',
+      apple: '🍎 애플'
+    };
+    App.showToast(styleNames[style] || style);
+  }
+
   /**
    * 모든 이벤트 리스너 초기화
    */
@@ -152,13 +312,13 @@
         }
 
         if (wheelAccumulator > WHEEL_THRESHOLD) {
-          if (App.Navigation && App.Navigation.goToSection) {
-            App.Navigation.goToSection(App.State.currentSection + 1);
+          if (App.Sections && App.Sections.goToSection) {
+            App.Sections.goToSection(App.State.currentSection + 1);
           }
           wheelAccumulator = 0;
         } else if (wheelAccumulator < -WHEEL_THRESHOLD) {
-          if (App.Navigation && App.Navigation.goToSection) {
-            App.Navigation.goToSection(App.State.currentSection - 1);
+          if (App.Sections && App.Sections.goToSection) {
+            App.Sections.goToSection(App.State.currentSection - 1);
           }
           wheelAccumulator = 0;
         }
@@ -215,21 +375,21 @@
       // 모바일 세로 캐러셀
       if (App.State.cardLayout === 'carousel' && isMobile) {
         if (touchOnCard && Math.abs(deltaY) > 50) {
-          if (deltaY > 0 && App.Carousel) App.Carousel.next();
-          else if (App.Carousel) App.Carousel.prev();
+          if (deltaY > 0 && App.Carousel) App.Carousel.carouselNext();
+          else if (App.Carousel) App.Carousel.carouselPrev();
         } else if (!touchOnCard && Math.abs(deltaY) > 50) {
           const velocity = Math.abs(deltaY) / deltaTime;
           if (velocity > 0.3 || Math.abs(deltaY) > 100) {
-            if (deltaY > 0 && App.Navigation) App.Navigation.goToSection(App.State.currentSection + 1);
-            else if (App.Navigation) App.Navigation.goToSection(App.State.currentSection - 1);
+            if (deltaY > 0 && App.Sections) App.Sections.goToSection(App.State.currentSection + 1);
+            else if (App.Sections) App.Sections.goToSection(App.State.currentSection - 1);
           }
         }
       }
       // 데스크톱 캐러셀
       else if (App.State.cardLayout === 'carousel' && !isMobile) {
         if (Math.abs(deltaX) > 50) {
-          if (deltaX > 0 && App.Carousel) App.Carousel.next();
-          else if (App.Carousel) App.Carousel.prev();
+          if (deltaX > 0 && App.Carousel) App.Carousel.carouselNext();
+          else if (App.Carousel) App.Carousel.carouselPrev();
         }
       }
       // 그리드 모드
@@ -237,8 +397,8 @@
         if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 50) {
           const velocity = Math.abs(deltaY) / deltaTime;
           if (velocity > 0.3 || Math.abs(deltaY) > 100) {
-            if (deltaY > 0 && App.Navigation) App.Navigation.goToSection(App.State.currentSection + 1);
-            else if (App.Navigation) App.Navigation.goToSection(App.State.currentSection - 1);
+            if (deltaY > 0 && App.Sections) App.Sections.goToSection(App.State.currentSection + 1);
+            else if (App.Sections) App.Sections.goToSection(App.State.currentSection - 1);
           }
         }
       }
@@ -253,8 +413,8 @@
     document.getElementById('menu-card-layout').addEventListener('click', e => {
       e.stopPropagation();
       const newLayout = App.State.cardLayout === 'grid' ? 'carousel' : 'grid';
-      if (App.Cards && App.Cards.changeLayout) {
-        App.Cards.changeLayout(newLayout);
+      if (App.Carousel && App.Carousel.changeCardLayout) {
+        App.Carousel.changeCardLayout(newLayout);
       }
     });
 
@@ -264,13 +424,11 @@
     // ===== 모달 이벤트 =====
     document.getElementById('modal-cancel').addEventListener('click', App.UI.closeModal);
     document.getElementById('modal-save').addEventListener('click', () => {
-      if (App.Shortcuts && App.Shortcuts.save) {
-        App.Shortcuts.save();
-      }
+      saveShortcut();
     });
     document.getElementById('modal-delete').addEventListener('click', () => {
-      if (App.State.editingId && App.Shortcuts && App.Shortcuts.delete) {
-        App.Shortcuts.delete(App.State.editingId);
+      if (App.State.editingId) {
+        deleteShortcut(App.State.editingId);
       }
     });
     document.getElementById('shortcut-modal').addEventListener('click', e => {
@@ -283,8 +441,8 @@
       App.UI.hideContextMenu();
     });
     document.getElementById('ctx-delete').addEventListener('click', () => {
-      if (App.State.contextTargetId && App.Shortcuts && App.Shortcuts.delete) {
-        App.Shortcuts.delete(App.State.contextTargetId);
+      if (App.State.contextTargetId) {
+        deleteShortcut(App.State.contextTargetId);
       }
       App.UI.hideContextMenu();
     });
@@ -293,16 +451,16 @@
     // ===== 키보드 이벤트 =====
     document.addEventListener('keydown', e => {
       if (App.State.cardLayout === 'carousel') {
-        if (e.key === 'ArrowLeft' && App.Carousel) App.Carousel.prev();
-        if (e.key === 'ArrowRight' && App.Carousel) App.Carousel.next();
-        if (e.key === 'ArrowUp' && App.Navigation) App.Navigation.goToSection(App.State.currentSection - 1);
-        if (e.key === 'ArrowDown' && App.Navigation) App.Navigation.goToSection(App.State.currentSection + 1);
+        if (e.key === 'ArrowLeft' && App.Carousel) App.Carousel.carouselPrev();
+        if (e.key === 'ArrowRight' && App.Carousel) App.Carousel.carouselNext();
+        if (e.key === 'ArrowUp' && App.Sections) App.Sections.goToSection(App.State.currentSection - 1);
+        if (e.key === 'ArrowDown' && App.Sections) App.Sections.goToSection(App.State.currentSection + 1);
       } else {
-        if ((e.key === 'ArrowDown' || e.key === 'ArrowRight') && App.Navigation) {
-          App.Navigation.goToSection(App.State.currentSection + 1);
+        if ((e.key === 'ArrowDown' || e.key === 'ArrowRight') && App.Sections) {
+          App.Sections.goToSection(App.State.currentSection + 1);
         }
-        if ((e.key === 'ArrowUp' || e.key === 'ArrowLeft') && App.Navigation) {
-          App.Navigation.goToSection(App.State.currentSection - 1);
+        if ((e.key === 'ArrowUp' || e.key === 'ArrowLeft') && App.Sections) {
+          App.Sections.goToSection(App.State.currentSection - 1);
         }
       }
       if (e.key === 'Escape') {
@@ -318,28 +476,65 @@
       App.UI.toggleSettingsMenu();
     });
     document.getElementById('menu-protocol').addEventListener('click', () => {
-      if (App.Settings && App.Settings.copyProtocolUrl) {
-        App.Settings.copyProtocolUrl();
-      }
+      copyProtocolUrl();
     });
     document.getElementById('menu-reset').addEventListener('click', () => {
-      if (App.Settings && App.Settings.resetShortcuts) {
-        App.Settings.resetShortcuts();
-      }
+      resetShortcuts();
     });
     document.getElementById('menu-icon-color').addEventListener('click', () => {
-      if (App.Settings && App.Settings.toggleIconColor) {
-        App.Settings.toggleIconColor();
+      toggleIconColor();
+    });
+
+    // ===== 카테고리 관리 =====
+    document.getElementById('menu-categories').addEventListener('click', () => {
+      App.UI.hideSettingsMenu();
+      if (App.Categories) App.Categories.openManager();
+    });
+
+    document.getElementById('category-modal-close').addEventListener('click', () => {
+      if (App.Categories) App.Categories.closeManager();
+    });
+
+    document.getElementById('category-modal').addEventListener('click', e => {
+      if (e.target.classList.contains('modal-overlay')) {
+        if (App.Categories) App.Categories.closeManager();
+      }
+    });
+
+    document.getElementById('add-category-btn').addEventListener('click', () => {
+      if (App.Categories) App.Categories.openEditDialog();
+    });
+
+    document.getElementById('category-edit-cancel').addEventListener('click', () => {
+      if (App.Categories) App.Categories.closeEditDialog();
+    });
+
+    document.getElementById('category-edit-save').addEventListener('click', () => {
+      if (App.Categories) App.Categories.saveFromDialog();
+    });
+
+    document.getElementById('category-edit-dialog').addEventListener('click', e => {
+      if (e.target.classList.contains('modal-overlay')) {
+        if (App.Categories) App.Categories.closeEditDialog();
+      }
+    });
+
+    // ===== 북마크 가져오기 =====
+    document.getElementById('menu-import').addEventListener('click', () => {
+      App.UI.hideSettingsMenu();
+      if (App.Bookmarks) App.Bookmarks.openImportModal();
+    });
+
+    document.getElementById('import-modal').addEventListener('click', e => {
+      if (e.target.classList.contains('modal-overlay')) {
+        if (App.Bookmarks) App.Bookmarks.closeImportModal();
       }
     });
 
     // ===== 공간 타입 전환 =====
     document.getElementById('menu-space').addEventListener('click', e => {
       e.stopPropagation();
-      const newType = App.State.spaceType === 'tunnel' ? 'warp' : 'tunnel';
-      if (App.Space && App.Space.changeType) {
-        App.Space.changeType(newType);
-      }
+      changeSpaceType();
     });
 
     // ===== 터널 서브메뉴 =====
@@ -352,9 +547,7 @@
     document.querySelectorAll('.tunnel-option').forEach(opt => {
       opt.addEventListener('click', e => {
         e.stopPropagation();
-        if (App.Tunnel && App.Tunnel.changeShape) {
-          App.Tunnel.changeShape(opt.dataset.shape);
-        }
+        changeTunnelShape(opt.dataset.shape);
       });
     });
 
@@ -368,9 +561,7 @@
     document.querySelectorAll('.card-style-option').forEach(opt => {
       opt.addEventListener('click', e => {
         e.stopPropagation();
-        if (App.Cards && App.Cards.changeStyle) {
-          App.Cards.changeStyle(opt.dataset.style);
-        }
+        changeCardStyle(opt.dataset.style);
       });
     });
 
@@ -389,9 +580,7 @@
     // ===== 컬러 바 =====
     document.querySelectorAll('.color-bar-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        if (App.Theme && App.Theme.applyGlow) {
-          App.Theme.applyGlow(btn.dataset.theme);
-        }
+        App.UI.applyGlowTheme(btn.dataset.theme);
         App.State.glowIntensity = 1;
       });
     });

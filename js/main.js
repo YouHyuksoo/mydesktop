@@ -17,6 +17,11 @@ window.App = window.App || {};
    * 앱 초기화
    */
   function init() {
+    // 카테고리 먼저 로드 (다른 모듈에서 사용하므로)
+    if (App.Categories) {
+      App.Categories.load();
+    }
+
     // 데이터 로드
     App.State.shortcuts = App.Storage.loadShortcuts();
     const settings = App.Storage.loadSettings();
@@ -31,7 +36,7 @@ window.App = window.App || {};
     App.State.selectedColor = App.Config.COLORS[0];
 
     // Three.js 초기화
-    App.Space.initThreeJS();
+    App.Space.init();
 
     // 공간 타입에 따라 생성
     if (App.State.spaceType === 'warp') {
@@ -42,7 +47,7 @@ window.App = window.App || {};
 
     // UI 초기화
     App.Sections.createDepthIndicator();
-    App.UI.initColorPicker();
+    App.Events.initColorPicker();
     App.Cards.renderCards();
     App.Events.initEventListeners();
 
@@ -50,6 +55,17 @@ window.App = window.App || {};
     App.Widgets.updateClock();
     setInterval(App.Widgets.updateClock, 1000);
     App.Widgets.initSystemInfo();
+
+    // 북마크 드래그앤드롭 초기화
+    if (App.Bookmarks) {
+      App.Bookmarks.initDropzone();
+      App.Bookmarks.initGlobalDrop();
+    }
+
+    // 카테고리 셀렉트 업데이트
+    if (App.Categories) {
+      App.Categories.updateCategorySelect();
+    }
 
     // 메뉴 상태 업데이트
     App.UI.updateSpaceMenu();

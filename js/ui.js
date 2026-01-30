@@ -24,6 +24,11 @@
     const title = document.getElementById('modal-title');
     const deleteBtn = document.getElementById('modal-delete');
 
+    // 카테고리 셀렉트 업데이트
+    if (App.Categories && App.Categories.updateCategorySelect) {
+      App.Categories.updateCategorySelect();
+    }
+
     if (id) {
       const s = App.State.shortcuts.find(x => x.id === id);
       if (s) {
@@ -39,7 +44,10 @@
       title.textContent = 'Add Shortcut';
       document.getElementById('shortcut-title').value = '';
       document.getElementById('shortcut-url').value = '';
-      document.getElementById('shortcut-layer').value = App.State.currentSection;
+      // 현재 섹션의 카테고리 ID로 설정
+      const sections = App.Categories ? App.Categories.getAll() : App.Config.SECTIONS;
+      const currentCategory = sections[App.State.currentSection];
+      document.getElementById('shortcut-layer').value = currentCategory ? currentCategory.id : 0;
       document.getElementById('shortcut-icon').value = '';
       App.State.selectedColor = App.Config.COLORS[0];
       deleteBtn.style.display = 'none';
@@ -261,6 +269,41 @@
     document.getElementById('carousel-dots').classList.remove('visible');
   }
 
+  /**
+   * 글로우 테마 적용
+   * @param {string} themeName - 테마 이름 (gold, purple, cyan 등)
+   */
+  function applyGlowTheme(themeName) {
+    const theme = App.Config.GLOW_THEMES[themeName];
+    if (!theme) return;
+
+    // CSS 변수 업데이트
+    document.documentElement.style.setProperty('--accent', theme.primary);
+    document.documentElement.style.setProperty('--accent2', theme.secondary);
+
+    // 글로우 오브 색상 변경
+    const orbs = document.querySelectorAll('.glow-orb');
+    orbs.forEach((orb, i) => {
+      if (theme.orbs[i]) {
+        gsap.to(orb, {
+          background: `radial-gradient(circle, ${theme.orbs[i]} 0%, transparent 70%)`,
+          duration: 0.5
+        });
+      }
+    });
+
+    // 버튼 활성화 상태 업데이트
+    document.querySelectorAll('.color-bar-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.theme === themeName);
+    });
+
+    // 상태 저장
+    App.State.glowTheme = themeName;
+    if (App.saveSettings) {
+      App.saveSettings();
+    }
+  }
+
   // App.UI로 export
   App.UI = {
     openModal: openModal,
@@ -283,7 +326,13 @@
     updateCardLayoutLabel: updateCardLayoutLabel,
     animateEntrance: animateEntrance,
     updateCarouselUI: updateCarouselUI,
-    hideCarouselUI: hideCarouselUI
+    hideCarouselUI: hideCarouselUI,
+    applyGlowTheme: applyGlowTheme
   };
+
+  // 편의 alias
+  App.showToast = showToast;
+  App.openModal = openModal;
+  App.closeModal = closeModal;
 
 })();
