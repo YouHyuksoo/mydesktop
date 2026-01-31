@@ -99,6 +99,7 @@ window.App = window.App || {};
           App.Effects.startUfoVisits();
           App.Effects.startCardSleepSystem();
           App.Effects.startCrowAttacks();
+          App.Effects.startCatPaws();
         }
       });
     }, 500);

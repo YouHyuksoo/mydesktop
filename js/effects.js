@@ -364,14 +364,20 @@ App.Effects = (function() {
         // 카드 클론 생성 (까마귀가 물고 가는 것처럼)
         cardClone = targetCard.cloneNode(true);
         cardClone.className = 'shortcut-card stolen-card';
+
+        // 까마귀 현재 위치 가져오기
+        const crowLeft = gsap.getProperty(crow, 'left');
+        const crowTop = gsap.getProperty(crow, 'top');
+
         cardClone.style.cssText = `
           position: fixed;
-          left: ${cardRect.left}px;
-          top: ${cardRect.top}px;
+          left: ${crowLeft + 10}px;
+          top: ${crowTop + 40}px;
           width: ${cardRect.width}px;
           height: ${cardRect.height}px;
           z-index: 9999;
           pointer-events: none;
+          transform: scale(0.7);
         `;
         document.body.appendChild(cardClone);
 
@@ -380,15 +386,48 @@ App.Effects = (function() {
       }
     });
 
-    // Phase 3: 카드 들고 날아가기
+    // Phase 2.5: 카드 물고 잠깐 멈칫 (득의양양)
+    timeline.to(crow, {
+      y: -10,
+      duration: 0.3,
+      ease: 'power2.out',
+      onUpdate: function() {
+        if (cardClone && isStolen) {
+          const crowLeft = gsap.getProperty(crow, 'left');
+          const crowTop = gsap.getProperty(crow, 'top');
+          gsap.set(cardClone, {
+            left: crowLeft + 10,
+            top: crowTop + 40
+          });
+        }
+      }
+    });
+
+    timeline.to(crow, {
+      y: 0,
+      duration: 0.2,
+      ease: 'power2.in',
+      onUpdate: function() {
+        if (cardClone && isStolen) {
+          const crowLeft = gsap.getProperty(crow, 'left');
+          const crowTop = gsap.getProperty(crow, 'top');
+          gsap.set(cardClone, {
+            left: crowLeft + 10,
+            top: crowTop + 40
+          });
+        }
+      }
+    });
+
+    // Phase 3: 카드 들고 천천히 날아가기
     timeline.to(crow, {
       left: fromLeft ? window.innerWidth + 200 : -200,
       top: -100,
       rotation: fromLeft ? 15 : -15,
-      duration: 2,
-      ease: 'power1.in',
+      duration: 4,
+      ease: 'power1.inOut',
       onUpdate: function() {
-        // 카드도 함께 이동 (gsap.getProperty로 정확한 애니메이션 값 가져오기)
+        // 카드도 함께 이동
         if (cardClone && isStolen) {
           const crowLeft = gsap.getProperty(crow, 'left');
           const crowTop = gsap.getProperty(crow, 'top');
@@ -396,8 +435,7 @@ App.Effects = (function() {
           gsap.set(cardClone, {
             left: crowLeft + 10,
             top: crowTop + 40,
-            rotation: crowRotation * 0.5,
-            scale: 0.7
+            rotation: crowRotation * 0.5
           });
         }
       },
@@ -483,6 +521,197 @@ App.Effects = (function() {
     if (App.showToast) {
       App.showToast('🎉 카드를 되찾았다!');
     }
+  }
+
+  // ===== 고양이 발자국 시스템 =====
+
+  /**
+   * 고양이 발자국 이벤트 시작
+   */
+  function startCatPaws() {
+    function scheduleNextCat() {
+      // 40초 ~ 90초 간격으로 고양이 등장
+      const delay = 40000 + Math.random() * 50000;
+      setTimeout(() => {
+        if (document.visibilityState === 'visible') {
+          createCatPawEvent();
+        }
+        scheduleNextCat();
+      }, delay);
+    }
+    // 첫 고양이는 25초 후
+    setTimeout(scheduleNextCat, 25000);
+  }
+
+  /**
+   * 고양이 발자국 이벤트 생성
+   */
+  function createCatPawEvent() {
+    const activeSection = document.querySelector('.section-cards.active');
+    if (!activeSection) return;
+
+    const cards = activeSection.querySelectorAll('.shortcut-card');
+    if (cards.length === 0) return;
+
+    // 랜덤 카드 선택 (밀 대상)
+    const targetCard = cards[Math.floor(Math.random() * cards.length)];
+    const cardRect = targetCard.getBoundingClientRect();
+
+    // 발자국 시작 위치 결정 (왼쪽 또는 오른쪽에서)
+    const fromLeft = Math.random() > 0.5;
+    const startX = fromLeft ? -50 : window.innerWidth + 50;
+    const startY = 100 + Math.random() * (window.innerHeight - 300);
+
+    // 발자국 경로 생성 (카드를 향해)
+    const targetX = cardRect.left + (fromLeft ? cardRect.width + 30 : -30);
+    const targetY = cardRect.top + cardRect.height / 2;
+
+    // 발자국 찍기 시작
+    createPawPrints(startX, startY, targetX, targetY, fromLeft, () => {
+      // 발자국이 카드 근처에 도달하면 고양이 발 등장
+      createCatPawPush(targetCard, cardRect, fromLeft);
+    });
+  }
+
+  /**
+   * 발자국 경로 생성
+   */
+  function createPawPrints(startX, startY, endX, endY, fromLeft, onReachTarget) {
+    const stepCount = 8;
+    const dx = (endX - startX) / stepCount;
+    const dy = (endY - startY) / stepCount;
+    let currentStep = 0;
+
+    function createNextPaw() {
+      if (currentStep >= stepCount) {
+        onReachTarget();
+        return;
+      }
+
+      const x = startX + dx * currentStep;
+      const y = startY + dy * currentStep;
+      const isLeft = currentStep % 2 === 0;
+
+      // 발자국 생성
+      const paw = document.createElement('div');
+      paw.className = 'cat-paw-print';
+      paw.innerHTML = '🐾';
+      paw.style.cssText = `
+        position: fixed;
+        left: ${x + (isLeft ? -10 : 10)}px;
+        top: ${y}px;
+        font-size: 24px;
+        opacity: 0;
+        z-index: 9998;
+        pointer-events: none;
+        transform: rotate(${fromLeft ? 90 : -90}deg) scaleX(${isLeft ? 1 : -1});
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+      `;
+      document.body.appendChild(paw);
+
+      // 발자국 나타났다 사라지기
+      gsap.to(paw, {
+        opacity: 0.7,
+        duration: 0.15,
+        ease: 'power2.out',
+        onComplete: () => {
+          gsap.to(paw, {
+            opacity: 0,
+            duration: 2,
+            delay: 1,
+            ease: 'power2.in',
+            onComplete: () => paw.remove()
+          });
+        }
+      });
+
+      currentStep++;
+      setTimeout(createNextPaw, 250);
+    }
+
+    createNextPaw();
+  }
+
+  /**
+   * 고양이 발로 카드 밀기
+   */
+  function createCatPawPush(targetCard, cardRect, fromLeft) {
+    // 고양이 발 생성
+    const paw = document.createElement('div');
+    paw.className = 'cat-paw';
+    paw.innerHTML = `
+      <div class="paw-arm">
+        <div class="paw-fur"></div>
+        <div class="paw-pad">
+          <div class="pad-main"></div>
+          <div class="pad-toe"></div>
+          <div class="pad-toe"></div>
+          <div class="pad-toe"></div>
+        </div>
+      </div>
+    `;
+
+    const pawX = fromLeft ? cardRect.left - 80 : cardRect.right + 20;
+    const pawY = cardRect.top + cardRect.height / 2 - 25;
+
+    paw.style.cssText = `
+      position: fixed;
+      left: ${pawX}px;
+      top: ${pawY}px;
+      z-index: 10000;
+      pointer-events: none;
+      transform: scaleX(${fromLeft ? 1 : -1});
+    `;
+    document.body.appendChild(paw);
+
+    // 발 등장 애니메이션
+    gsap.fromTo(paw,
+      { x: fromLeft ? -60 : 60, opacity: 0 },
+      {
+        x: 0,
+        opacity: 1,
+        duration: 0.3,
+        ease: 'power2.out',
+        onComplete: () => {
+          // 카드 밀기!
+          const pushDistance = fromLeft ? 40 : -40;
+
+          // 발이 카드를 미는 동작
+          gsap.to(paw, {
+            x: fromLeft ? 50 : -50,
+            duration: 0.2,
+            ease: 'power2.in',
+            onComplete: () => {
+              // 카드 흔들리고 밀리기
+              gsap.to(targetCard, {
+                x: pushDistance,
+                rotation: fromLeft ? 5 : -5,
+                duration: 0.15,
+                ease: 'power2.out',
+                onComplete: () => {
+                  // 카드 원래 위치로 복귀
+                  gsap.to(targetCard, {
+                    x: 0,
+                    rotation: 0,
+                    duration: 0.5,
+                    ease: 'elastic.out(1, 0.5)'
+                  });
+                }
+              });
+
+              // 발 빠르게 뺌
+              gsap.to(paw, {
+                x: fromLeft ? -80 : 80,
+                opacity: 0,
+                duration: 0.3,
+                ease: 'power2.in',
+                onComplete: () => paw.remove()
+              });
+            }
+          });
+        }
+      }
+    );
   }
 
   // ===== 카드 잠들기 시스템 =====
@@ -964,6 +1193,8 @@ App.Effects = (function() {
     wakeUpCard: wakeUpCard,
     resetAllCardTimers: resetAllCardTimers,
     startCrowAttacks: startCrowAttacks,
-    createCrowAttack: createCrowAttack
+    createCrowAttack: createCrowAttack,
+    startCatPaws: startCatPaws,
+    createCatPawEvent: createCatPawEvent
   };
 })();
