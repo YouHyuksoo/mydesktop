@@ -589,7 +589,7 @@ App.Effects = (function() {
     const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI) + 90;
 
     // 지그재그 오프셋 (진행 방향 기준 좌우)
-    const zigzagOffset = 35;
+    const zigzagOffset = 60;
 
     function createNextPaw() {
       if (currentStep >= stepCount) {
