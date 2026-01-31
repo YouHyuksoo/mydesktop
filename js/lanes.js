@@ -420,17 +420,13 @@
 
     App.State.isLaneTransitioning = true;
 
-    const direction = laneId > App.State.currentLane ? 1 : -1;
     const previousLane = App.State.currentLane;
 
     // 애니메이션 실행
-    animateLaneTransition(previousLane, laneId, direction);
+    animateLaneTransition(previousLane, laneId);
 
     App.State.currentLane = laneId;
     updateLaneIndicator();
-
-    // 레인별 UI 업데이트
-    updateLaneVisibility(laneId);
 
     setTimeout(() => {
       App.State.isLaneTransitioning = false;
@@ -455,119 +451,88 @@
    * 레인 전환 애니메이션
    * @param {number} fromLane - 출발 레인
    * @param {number} toLane - 도착 레인
-   * @param {number} direction - 방향 (1: 오른쪽으로, -1: 왼쪽으로)
    */
-  function animateLaneTransition(fromLane, toLane, direction) {
+  function animateLaneTransition(fromLane, toLane) {
     const mainContainer = document.getElementById('cards-3d-space');
     const leftLane = document.getElementById('lane-left');
     const rightLane = document.getElementById('lane-right');
     const depthIndicator = document.getElementById('depth-indicator');
     const sectionInfo = document.getElementById('section-info');
 
-    // 화면 너비 기준 이동 거리
-    const slideDistance = window.innerWidth;
-
-    // CENTER 레인의 원래 요소들 (section-cards)
+    const slideDistance = window.innerWidth * 0.8;
     const centerElements = mainContainer.querySelectorAll('.section-cards');
 
-    // 이동 방향에 따른 애니메이션
-    if (toLane === LANE_IDS.CENTER) {
-      // CENTER로 돌아오기
-      // 현재 보이는 레인 숨기기
-      const currentLaneEl = fromLane === LANE_IDS.LEFT ? leftLane : rightLane;
+    // LEFT(-1) → CENTER(0): 화면이 왼쪽으로 슬라이드 (LEFT가 왼쪽으로 나가고, CENTER가 오른쪽에서 들어옴)
+    // CENTER(0) → LEFT(-1): 화면이 오른쪽으로 슬라이드 (CENTER가 오른쪽으로 나가고, LEFT가 왼쪽에서 들어옴)
+    // CENTER(0) → RIGHT(1): 화면이 왼쪽으로 슬라이드 (CENTER가 왼쪽으로 나가고, RIGHT가 오른쪽에서 들어옴)
+    // RIGHT(1) → CENTER(0): 화면이 오른쪽으로 슬라이드 (RIGHT가 오른쪽으로 나가고, CENTER가 왼쪽에서 들어옴)
 
-      gsap.to(currentLaneEl, {
-        x: direction * slideDistance,
+    if (toLane === LANE_IDS.CENTER) {
+      // LEFT 또는 RIGHT에서 CENTER로 돌아오기
+      const leavingLane = fromLane === LANE_IDS.LEFT ? leftLane : rightLane;
+      const exitDirection = fromLane === LANE_IDS.LEFT ? -1 : 1; // LEFT는 왼쪽으로, RIGHT는 오른쪽으로 나감
+
+      // 이전 레인 나가기
+      gsap.to(leavingLane, {
+        x: exitDirection * slideDistance,
         opacity: 0,
-        rotationY: direction * 30,
-        duration: 0.5,
+        duration: 0.4,
         ease: 'power2.in',
         onComplete: () => {
-          currentLaneEl.classList.remove('active');
-          gsap.set(currentLaneEl, { display: 'none' });
-          // 이전 레인 콘텐츠 정리
+          leavingLane.classList.remove('active');
+          gsap.set(leavingLane, { display: 'none', x: 0 });
           clearLaneContent(fromLane);
         }
       });
 
-      // CENTER 섹션들 보이기
-      centerElements.forEach(el => {
-        gsap.set(el, { display: 'flex' });
+      // CENTER 섹션들 들어오기
+      const enterDirection = fromLane === LANE_IDS.LEFT ? 1 : -1; // LEFT에서 오면 오른쪽에서, RIGHT에서 오면 왼쪽에서
+      centerElements.forEach((el, i) => {
+        gsap.set(el, { display: 'flex', x: enterDirection * slideDistance, opacity: 0 });
       });
-      gsap.fromTo(centerElements,
-        { x: -direction * slideDistance * 0.5, opacity: 0, rotationY: -direction * 30 },
-        { x: 0, opacity: 1, rotationY: 0, duration: 0.5, ease: 'power2.out', stagger: 0.05 }
-      );
 
-      // depth-indicator 보이기
-      gsap.to(depthIndicator, { opacity: 1, duration: 0.3 });
-
-      // section-info 보이기
-      gsap.to(sectionInfo, { opacity: 1, duration: 0.3 });
-
-    } else if (fromLane === LANE_IDS.CENTER) {
-      // CENTER에서 LEFT 또는 RIGHT로 이동
-      const targetLane = toLane === LANE_IDS.LEFT ? leftLane : rightLane;
-
-      // CENTER 섹션들 숨기기
       gsap.to(centerElements, {
-        x: direction * slideDistance * 0.5,
-        opacity: 0,
-        rotationY: direction * 30,
-        duration: 0.5,
-        ease: 'power2.in',
-        stagger: 0.02,
+        x: 0,
+        opacity: 1,
+        duration: 0.4,
+        ease: 'power2.out',
+        stagger: 0.03,
         onComplete: () => {
-          centerElements.forEach(el => {
-            gsap.set(el, { display: 'none' });
+          // active 섹션 설정
+          centerElements.forEach((section, i) => {
+            section.classList.toggle('active', i === App.State.currentSection);
           });
         }
       });
 
-      // depth-indicator 숨기기
-      gsap.to(depthIndicator, { opacity: 0, duration: 0.3 });
+      // UI 요소 보이기
+      gsap.to(depthIndicator, { opacity: 1, duration: 0.3 });
+      gsap.to(sectionInfo, { opacity: 1, duration: 0.3 });
 
-      // section-info 숨기기
-      gsap.to(sectionInfo, { opacity: 0, duration: 0.3 });
+    } else if (fromLane === LANE_IDS.CENTER) {
+      // CENTER에서 LEFT 또는 RIGHT로 이동
+      const enteringLane = toLane === LANE_IDS.LEFT ? leftLane : rightLane;
+      const exitDirection = toLane === LANE_IDS.LEFT ? 1 : -1; // LEFT로 가면 CENTER는 오른쪽으로, RIGHT로 가면 왼쪽으로
+      const enterDirection = toLane === LANE_IDS.LEFT ? -1 : 1; // LEFT는 왼쪽에서, RIGHT는 오른쪽에서 들어옴
 
-      // 레인 콘텐츠 먼저 렌더링
-      if (toLane === LANE_IDS.LEFT) {
-        renderHistoryLane();
-      } else {
-        renderToolsLane();
-      }
-
-      // 타겟 레인 보이기
-      gsap.set(targetLane, { display: 'flex', x: -direction * slideDistance, rotationY: -direction * 30, opacity: 0 });
-      targetLane.classList.add('active');
-
-      gsap.to(targetLane, {
-        x: 0,
-        opacity: 1,
-        rotationY: 0,
-        duration: 0.5,
-        ease: 'power2.out'
-      });
-
-    } else {
-      // LEFT ↔ RIGHT 직접 전환 (CENTER를 거치지 않음)
-      const fromLaneEl = fromLane === LANE_IDS.LEFT ? leftLane : rightLane;
-      const targetLane = toLane === LANE_IDS.LEFT ? leftLane : rightLane;
-
-      // 이전 레인 숨기기
-      gsap.to(fromLaneEl, {
-        x: direction * slideDistance,
+      // CENTER 섹션들 나가기
+      gsap.to(centerElements, {
+        x: exitDirection * slideDistance,
         opacity: 0,
-        rotationY: direction * 30,
-        duration: 0.5,
+        duration: 0.4,
         ease: 'power2.in',
+        stagger: 0.02,
         onComplete: () => {
-          fromLaneEl.classList.remove('active');
-          gsap.set(fromLaneEl, { display: 'none' });
-          // 이전 레인 콘텐츠 정리
-          clearLaneContent(fromLane);
+          centerElements.forEach(el => {
+            el.classList.remove('active');
+            gsap.set(el, { display: 'none', x: 0 });
+          });
         }
       });
+
+      // UI 요소 숨기기
+      gsap.to(depthIndicator, { opacity: 0, duration: 0.3 });
+      gsap.to(sectionInfo, { opacity: 0, duration: 0.3 });
 
       // 새 레인 콘텐츠 렌더링
       if (toLane === LANE_IDS.LEFT) {
@@ -576,39 +541,15 @@
         renderToolsLane();
       }
 
-      // 타겟 레인 보이기
-      gsap.set(targetLane, { display: 'flex', x: -direction * slideDistance, rotationY: -direction * 30, opacity: 0 });
-      targetLane.classList.add('active');
+      // 새 레인 들어오기
+      gsap.set(enteringLane, { display: 'flex', x: enterDirection * slideDistance, opacity: 0 });
+      enteringLane.classList.add('active');
 
-      gsap.to(targetLane, {
+      gsap.to(enteringLane, {
         x: 0,
         opacity: 1,
-        rotationY: 0,
-        duration: 0.5,
+        duration: 0.4,
         ease: 'power2.out'
-      });
-    }
-  }
-
-  /**
-   * 레인 가시성 업데이트
-   * @param {number} laneId - 현재 레인
-   */
-  function updateLaneVisibility(laneId) {
-    const leftLane = document.getElementById('lane-left');
-    const rightLane = document.getElementById('lane-right');
-    const sections = document.querySelectorAll('.section-cards');
-
-    // 모든 레인 비활성화
-    if (leftLane) leftLane.classList.remove('active');
-    if (rightLane) rightLane.classList.remove('active');
-
-    if (laneId === LANE_IDS.CENTER) {
-      // CENTER: 기존 섹션 시스템 활성화
-      sections.forEach((section, i) => {
-        if (i === App.State.currentSection) {
-          section.classList.add('active');
-        }
       });
     }
   }
