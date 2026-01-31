@@ -576,10 +576,10 @@ App.Effects = (function() {
   }
 
   /**
-   * 발자국 경로 생성 - 큰 흰색 발자국
+   * 발자국 경로 생성 - 큰 흰색 발자국 (4발 지그재그)
    */
   function createPawPrints(startX, startY, endX, endY, fromLeft) {
-    const stepCount = 12;
+    const stepCount = 10; // 걸음 수
     const dx = (endX - startX) / stepCount;
     const dy = (endY - startY) / stepCount;
     let currentStep = 0;
@@ -587,64 +587,111 @@ App.Effects = (function() {
     // 이동 방향에 따른 회전 각도 계산
     const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI) + 90;
 
+    // 지그재그 오프셋 (진행 방향 기준 좌우)
+    const zigzagOffset = 35;
+
     function createNextPaw() {
       if (currentStep >= stepCount) {
         return;
       }
 
-      const x = startX + dx * currentStep;
-      const y = startY + dy * currentStep;
-      const isLeft = currentStep % 2 === 0;
+      const baseX = startX + dx * currentStep;
+      const baseY = startY + dy * currentStep;
 
-      // 큰 흰색 발자국 생성
-      const paw = document.createElement('div');
-      paw.className = 'cat-paw-print';
-      paw.style.cssText = `
-        position: fixed;
-        left: ${x + (isLeft ? -25 : 25)}px;
-        top: ${y}px;
-        width: 60px;
-        height: 70px;
-        opacity: 0;
-        z-index: 9998;
-        pointer-events: none;
-        transform: rotate(${angle}deg) scaleX(${isLeft ? 1 : -1});
-      `;
+      // 4발 패턴: 왼앞-오뒤, 오앞-왼뒤 번갈아
+      // 진행 방향의 수직 방향으로 오프셋
+      const perpX = -Math.sin(angle * Math.PI / 180);
+      const perpY = Math.cos(angle * Math.PI / 180);
 
-      // SVG 발자국 (흰색)
-      paw.innerHTML = `
-        <svg viewBox="0 0 60 70" fill="white" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));">
-          <!-- 메인 패드 -->
-          <ellipse cx="30" cy="45" rx="18" ry="20" opacity="0.9"/>
-          <!-- 발가락 패드들 -->
-          <ellipse cx="15" cy="18" rx="10" ry="12" opacity="0.9"/>
-          <ellipse cx="30" cy="10" rx="9" ry="11" opacity="0.9"/>
-          <ellipse cx="45" cy="18" rx="10" ry="12" opacity="0.9"/>
-        </svg>
-      `;
-      document.body.appendChild(paw);
+      // 앞뒤 오프셋
+      const forwardOffset = 15;
 
-      // 발자국 나타났다 천천히 사라지기
-      gsap.to(paw, {
-        opacity: 0.8,
-        duration: 0.1,
-        ease: 'power2.out',
-        onComplete: () => {
-          gsap.to(paw, {
-            opacity: 0,
-            duration: 3,
-            delay: 0.5,
-            ease: 'power2.in',
-            onComplete: () => paw.remove()
-          });
-        }
-      });
+      if (currentStep % 2 === 0) {
+        // 왼쪽 앞발
+        createSinglePaw(
+          baseX + perpX * zigzagOffset - dx * 0.2,
+          baseY + perpY * zigzagOffset - dy * 0.2,
+          angle, 0
+        );
+        // 오른쪽 뒷발 (살짝 뒤에)
+        setTimeout(() => {
+          createSinglePaw(
+            baseX - perpX * zigzagOffset + dx * 0.2,
+            baseY - perpY * zigzagOffset + dy * 0.2,
+            angle, 100
+          );
+        }, 100);
+      } else {
+        // 오른쪽 앞발
+        createSinglePaw(
+          baseX - perpX * zigzagOffset - dx * 0.2,
+          baseY - perpY * zigzagOffset - dy * 0.2,
+          angle, 0
+        );
+        // 왼쪽 뒷발 (살짝 뒤에)
+        setTimeout(() => {
+          createSinglePaw(
+            baseX + perpX * zigzagOffset + dx * 0.2,
+            baseY + perpY * zigzagOffset + dy * 0.2,
+            angle, 100
+          );
+        }, 100);
+      }
 
       currentStep++;
-      setTimeout(createNextPaw, 300);
+      setTimeout(createNextPaw, 350);
     }
 
     createNextPaw();
+  }
+
+  /**
+   * 단일 발자국 생성
+   */
+  function createSinglePaw(x, y, angle, delay) {
+    const paw = document.createElement('div');
+    paw.className = 'cat-paw-print';
+    paw.style.cssText = `
+      position: fixed;
+      left: ${x}px;
+      top: ${y}px;
+      width: 50px;
+      height: 60px;
+      opacity: 0;
+      z-index: 9998;
+      pointer-events: none;
+      transform: rotate(${angle}deg);
+    `;
+
+    // SVG 발자국 (흰색)
+    paw.innerHTML = `
+      <svg viewBox="0 0 50 60" fill="white" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5));">
+        <!-- 메인 패드 -->
+        <ellipse cx="25" cy="38" rx="14" ry="16" opacity="0.95"/>
+        <!-- 발가락 패드들 -->
+        <ellipse cx="12" cy="15" rx="8" ry="10" opacity="0.95"/>
+        <ellipse cx="25" cy="8" rx="7" ry="9" opacity="0.95"/>
+        <ellipse cx="38" cy="15" rx="8" ry="10" opacity="0.95"/>
+      </svg>
+    `;
+    document.body.appendChild(paw);
+
+    // 발자국 나타났다 천천히 사라지기
+    gsap.to(paw, {
+      opacity: 0.9,
+      duration: 0.1,
+      delay: delay / 1000,
+      ease: 'power2.out',
+      onComplete: () => {
+        gsap.to(paw, {
+          opacity: 0,
+          duration: 2.5,
+          delay: 0.8,
+          ease: 'power2.in',
+          onComplete: () => paw.remove()
+        });
+      }
+    });
   }
 
   // ===== 카드 잠들기 시스템 =====
