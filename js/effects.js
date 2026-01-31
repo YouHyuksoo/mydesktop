@@ -577,70 +577,29 @@ App.Effects = (function() {
   }
 
   /**
-   * 발자국 경로 생성 - 큰 흰색 발자국 (4발 지그재그)
+   * 발자국 경로 생성 - 랜덤하게 화면에 찍힘
    */
   function createPawPrints(startX, startY, endX, endY, fromLeft) {
-    const stepCount = 10; // 걸음 수
-    const dx = (endX - startX) / stepCount;
-    const dy = (endY - startY) / stepCount;
-    let currentStep = 0;
-
-    // 이동 방향에 따른 회전 각도 계산
-    const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI) + 90;
-
-    // 지그재그 오프셋 (진행 방향 기준 좌우)
-    const zigzagOffset = 120;
+    const pawCount = 15; // 발자국 개수
+    let currentPaw = 0;
 
     function createNextPaw() {
-      if (currentStep >= stepCount) {
+      if (currentPaw >= pawCount) {
         return;
       }
 
-      const baseX = startX + dx * currentStep;
-      const baseY = startY + dy * currentStep;
+      // 랜덤 위치 (화면 전체에 퍼지게)
+      const x = 100 + Math.random() * (window.innerWidth - 200);
+      const y = 100 + Math.random() * (window.innerHeight - 200);
 
-      // 4발 패턴: 왼앞-오뒤, 오앞-왼뒤 번갈아
-      // 진행 방향의 수직 방향으로 오프셋
-      const perpX = -Math.sin(angle * Math.PI / 180);
-      const perpY = Math.cos(angle * Math.PI / 180);
+      // 랜덤 회전
+      const angle = Math.random() * 360;
 
-      // 앞뒤 오프셋
-      const forwardOffset = 15;
+      createSinglePaw(x, y, angle, 0);
 
-      if (currentStep % 2 === 0) {
-        // 왼쪽 앞발
-        createSinglePaw(
-          baseX + perpX * zigzagOffset - dx * 0.2,
-          baseY + perpY * zigzagOffset - dy * 0.2,
-          angle, 0
-        );
-        // 오른쪽 뒷발 (살짝 뒤에)
-        setTimeout(() => {
-          createSinglePaw(
-            baseX - perpX * zigzagOffset + dx * 0.2,
-            baseY - perpY * zigzagOffset + dy * 0.2,
-            angle, 100
-          );
-        }, 100);
-      } else {
-        // 오른쪽 앞발
-        createSinglePaw(
-          baseX - perpX * zigzagOffset - dx * 0.2,
-          baseY - perpY * zigzagOffset - dy * 0.2,
-          angle, 0
-        );
-        // 왼쪽 뒷발 (살짝 뒤에)
-        setTimeout(() => {
-          createSinglePaw(
-            baseX + perpX * zigzagOffset + dx * 0.2,
-            baseY + perpY * zigzagOffset + dy * 0.2,
-            angle, 100
-          );
-        }, 100);
-      }
-
-      currentStep++;
-      setTimeout(createNextPaw, 350);
+      currentPaw++;
+      // 랜덤 간격으로 다음 발자국
+      setTimeout(createNextPaw, 200 + Math.random() * 300);
     }
 
     createNextPaw();
