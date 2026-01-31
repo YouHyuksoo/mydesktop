@@ -228,8 +228,8 @@ App.Effects = (function() {
    */
   function startCrowAttacks() {
     function scheduleNextCrow() {
-      // 45초 ~ 2분 간격으로 까마귀 출현
-      const delay = 45000 + Math.random() * 75000;
+      // 2분 ~ 5분 간격으로 까마귀 출현 (가끔)
+      const delay = 120000 + Math.random() * 180000;
       setTimeout(() => {
         if (document.visibilityState === 'visible') {
           createCrowAttack();
@@ -237,8 +237,8 @@ App.Effects = (function() {
         scheduleNextCrow();
       }, delay);
     }
-    // 첫 까마귀는 20초 후
-    setTimeout(scheduleNextCrow, 20000);
+    // 첫 까마귀는 1분 후
+    setTimeout(scheduleNextCrow, 60000);
   }
 
   /**
@@ -531,8 +531,8 @@ App.Effects = (function() {
    */
   function startCatPaws() {
     function scheduleNextCat() {
-      // 30초 ~ 70초 간격으로 발자국 등장
-      const delay = 30000 + Math.random() * 40000;
+      // 2분 ~ 5분 간격으로 발자국 등장 (가끔)
+      const delay = 120000 + Math.random() * 180000;
       setTimeout(() => {
         if (document.visibilityState === 'visible') {
           createCatPawEvent();
@@ -540,8 +540,8 @@ App.Effects = (function() {
         scheduleNextCat();
       }, delay);
     }
-    // 첫 발자국은 15초 후
-    setTimeout(scheduleNextCat, 15000);
+    // 첫 발자국은 90초 후
+    setTimeout(scheduleNextCat, 90000);
   }
 
   /**
@@ -833,8 +833,8 @@ App.Effects = (function() {
    */
   function startUfoVisits() {
     function scheduleNextUfo() {
-      // 30초 ~ 2분 간격으로 UFO 출현
-      const delay = 30000 + Math.random() * 90000;
+      // 2분 ~ 5분 간격으로 UFO 출현 (가끔)
+      const delay = 120000 + Math.random() * 180000;
       setTimeout(() => {
         if (document.visibilityState === 'visible') {
           createUfoEvent();
@@ -842,8 +842,8 @@ App.Effects = (function() {
         scheduleNextUfo();
       }, delay);
     }
-    // 첫 UFO는 10초 후에 등장
-    setTimeout(scheduleNextUfo, 10000);
+    // 첫 UFO는 2분 후에 등장
+    setTimeout(scheduleNextUfo, 120000);
   }
 
   /**
