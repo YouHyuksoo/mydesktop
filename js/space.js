@@ -137,17 +137,21 @@ App.Space = (function() {
     // 기존 요소 제거
     clearSpace();
 
+    // App.State에서 설정 읽기
+    const currentShape = App.State.tunnelShape || tunnelShape;
+    const currentTheme = App.State.glowTheme || glowTheme;
+
     const config = App.Config.TUNNEL;
 
     // 터널 모드용 fog
     scene.fog = new THREE.Fog(0x050508, 100, 1500);
 
-    const themeColors = App.Config.GLOW_THEMES[glowTheme];
+    const themeColors = App.Config.GLOW_THEMES[currentTheme];
     const primaryColor = new THREE.Color(themeColors ? themeColors.primary : '#ffd700');
 
     for (let i = 0; i < config.RING_COUNT; i++) {
       const radius = 300 + Math.sin(i * 0.3) * 50;
-      const vertices = getShapeVertices(tunnelShape, radius, i);
+      const vertices = getShapeVertices(currentShape, radius, i);
 
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
@@ -206,12 +210,15 @@ App.Space = (function() {
     // 기존 요소 제거
     clearSpace();
 
+    // App.State에서 테마 읽기
+    const currentTheme = App.State.glowTheme || glowTheme;
+
     const config = App.Config.WARP;
 
     // 워프 모드용 fog 조정 (더 먼 거리)
     scene.fog = new THREE.Fog(0x050508, 200, 2500);
 
-    const themeColors = App.Config.GLOW_THEMES[glowTheme];
+    const themeColors = App.Config.GLOW_THEMES[currentTheme];
     const themeColor = new THREE.Color(themeColors ? themeColors.primary : '#ffd700');
 
     // 별들 생성
@@ -404,13 +411,21 @@ App.Space = (function() {
   function animate() {
     requestAnimationFrame(animate);
 
+    // App.State에서 값 읽기 (외부에서 설정한 값 반영)
+    const stateTargetSpeed = App.State.targetSpeed || 0;
+    const stateGlowIntensity = App.State.glowIntensity || 0;
+
     // 속도 보간 (더 부드럽게)
-    tunnelSpeed += (targetSpeed - tunnelSpeed) * 0.08;
+    tunnelSpeed += (stateTargetSpeed - tunnelSpeed) * 0.08;
 
     // 조명 강도 감쇠
-    glowIntensity *= 0.95;
+    glowIntensity = Math.max(glowIntensity * 0.95, stateGlowIntensity * 0.95);
+    App.State.glowIntensity = glowIntensity;
 
-    if (spaceType === 'warp') {
+    // App.State에서 공간 타입 읽기
+    const currentSpaceType = App.State.spaceType || spaceType;
+
+    if (currentSpaceType === 'warp') {
       updateCosmicWarp();
     } else {
       updateTunnelAnimation();

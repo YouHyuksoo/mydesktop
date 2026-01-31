@@ -9,7 +9,8 @@
 
 window.App = window.App || {};
 
-App.State = {
+// 대문자/소문자 둘 다 지원
+App.state = App.State = {
   // 데이터
   shortcuts: [],
 

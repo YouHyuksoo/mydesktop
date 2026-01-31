@@ -43,21 +43,46 @@
 
 .section-cards {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 140px;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  margin-left: -400px; /* max-width의 절반 */
   transform-style: preserve-3d;
   display: flex;
   gap: 20px;
   justify-content: center;
-  align-items: center;
-  align-content: center;
+  align-items: flex-start;
+  align-content: flex-start;
   flex-wrap: wrap;
-  max-width: 800px;
-  margin: auto;
+  width: 800px;
+  max-width: 90vw;
+  max-height: calc(100vh - 280px);
+  overflow: hidden;
   padding: 20px;
   pointer-events: none;
+  box-sizing: border-box;
+}
+
+/* 반응형 중앙 정렬 */
+@media (max-width: 900px) {
+  .section-cards {
+    left: 5%;
+    right: 5%;
+    margin-left: 0;
+    width: auto;
+  }
+}
+
+/* 그리드 모드에서 내부 스크롤 지원 */
+.section-cards.grid-scrollable {
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.section-cards.grid-scrollable::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 
 /* 캐러셀 레이아웃 */
@@ -414,6 +439,62 @@
   border-color: var(--accent);
   box-shadow: 0 0 20px var(--card-glow);
   transform: scale(1.4);
+}
+
+/* ===== Grid Scroll Controls ===== */
+#grid-scroll-controls {
+  position: fixed;
+  right: 100px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  z-index: 150;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+#grid-scroll-controls.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.grid-scroll-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: rgba(10, 10, 15, 0.8);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  transition: all 0.3s ease;
+}
+
+.grid-scroll-btn:hover {
+  background: rgba(255, 215, 0, 0.15);
+  border-color: var(--accent);
+  transform: scale(1.1);
+}
+
+.grid-scroll-btn:active {
+  transform: scale(0.95);
+}
+
+.grid-scroll-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.grid-scroll-btn svg {
+  width: 24px;
+  height: 24px;
 }
 
 /* ===== Scroll Hint ===== */

@@ -82,6 +82,11 @@
       return `<img src="https://cdn.simpleicons.org/${name}/${color.replace('#', '')}" alt="${shortcut.title}" onerror="this.parentElement.innerHTML='${shortcut.title[0].toUpperCase()}'">`;
     }
 
+    // Data URI 이미지 (Base64 - Chrome 북마크에서 가져온 아이콘)
+    if (icon.startsWith('data:')) {
+      return `<img src="${icon}" alt="${shortcut.title}" onerror="this.parentElement.innerHTML='${shortcut.title[0].toUpperCase()}'">`;
+    }
+
     // URL 이미지
     if (icon.startsWith('http')) {
       return `<img src="${icon}" alt="${shortcut.title}" onerror="this.parentElement.innerHTML='${shortcut.title[0].toUpperCase()}'">`;
@@ -262,6 +267,13 @@
     } else {
       App.Carousel.hideCarouselUI();
     }
+
+    // 그리드 스크롤 버튼 상태 업데이트
+    setTimeout(() => {
+      if (App.Events && App.Events.updateGridScrollButtons) {
+        App.Events.updateGridScrollButtons();
+      }
+    }, 100);
   }
 
   /**
