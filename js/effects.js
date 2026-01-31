@@ -609,6 +609,35 @@ App.Effects = (function() {
    * 단일 발자국 생성
    */
   function createSinglePaw(x, y, angle, delay) {
+    // 반짝이는 빛 효과 먼저
+    const flash = document.createElement('div');
+    flash.style.cssText = `
+      position: fixed;
+      left: ${x + 25}px;
+      top: ${y + 30}px;
+      width: 10px;
+      height: 10px;
+      background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.8) 30%, transparent 70%);
+      border-radius: 50%;
+      z-index: 9999;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+    `;
+    document.body.appendChild(flash);
+
+    // 빛 번쩍 효과
+    gsap.fromTo(flash,
+      { scale: 0, opacity: 1 },
+      {
+        scale: 8,
+        opacity: 0,
+        duration: 0.4,
+        ease: 'power2.out',
+        onComplete: () => flash.remove()
+      }
+    );
+
+    // 발자국
     const paw = document.createElement('div');
     paw.className = 'cat-paw-print';
     paw.style.cssText = `
@@ -623,30 +652,30 @@ App.Effects = (function() {
       transform: rotate(${angle}deg);
     `;
 
-    // SVG 발자국 (흰색)
+    // SVG 발자국 (투명한 흰색)
     paw.innerHTML = `
-      <svg viewBox="0 0 50 60" fill="white" style="filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5));">
+      <svg viewBox="0 0 50 60" fill="rgba(255,255,255,0.5)" style="filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));">
         <!-- 메인 패드 -->
-        <ellipse cx="25" cy="38" rx="14" ry="16" opacity="0.95"/>
+        <ellipse cx="25" cy="38" rx="14" ry="16"/>
         <!-- 발가락 패드들 -->
-        <ellipse cx="12" cy="15" rx="8" ry="10" opacity="0.95"/>
-        <ellipse cx="25" cy="8" rx="7" ry="9" opacity="0.95"/>
-        <ellipse cx="38" cy="15" rx="8" ry="10" opacity="0.95"/>
+        <ellipse cx="12" cy="15" rx="8" ry="10"/>
+        <ellipse cx="25" cy="8" rx="7" ry="9"/>
+        <ellipse cx="38" cy="15" rx="8" ry="10"/>
       </svg>
     `;
     document.body.appendChild(paw);
 
     // 발자국 나타났다 천천히 사라지기
     gsap.to(paw, {
-      opacity: 0.9,
-      duration: 0.1,
+      opacity: 0.6,
+      duration: 0.15,
       delay: delay / 1000,
       ease: 'power2.out',
       onComplete: () => {
         gsap.to(paw, {
           opacity: 0,
-          duration: 2.5,
-          delay: 0.8,
+          duration: 2,
+          delay: 0.5,
           ease: 'power2.in',
           onComplete: () => paw.remove()
         });
