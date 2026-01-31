@@ -272,10 +272,39 @@
       }
     }
 
+    // Shift+휠로 레인 전환을 위한 변수
+    let laneWheelAccumulator = 0;
+    const LANE_WHEEL_THRESHOLD = 100;
+
     window.addEventListener('wheel', e => {
       const now = Date.now();
       const timeDelta = now - lastWheelTime;
       lastWheelTime = now;
+
+      // Shift+휠: 레인 전환 (X축)
+      if (e.shiftKey) {
+        if (!App.State.isLaneTransitioning && App.Lanes) {
+          laneWheelAccumulator += e.deltaY * 0.8;
+
+          if (laneWheelAccumulator > LANE_WHEEL_THRESHOLD) {
+            App.Lanes.goToLane(App.State.currentLane + 1);
+            laneWheelAccumulator = 0;
+          } else if (laneWheelAccumulator < -LANE_WHEEL_THRESHOLD) {
+            App.Lanes.goToLane(App.State.currentLane - 1);
+            laneWheelAccumulator = 0;
+          }
+        }
+
+        // Shift 휠에서는 섹션 이동 안함
+        clearTimeout(wheelTimeout);
+        wheelTimeout = setTimeout(() => {
+          laneWheelAccumulator = 0;
+        }, 150);
+        return;
+      }
+
+      // CENTER 레인이 아니면 휠로 섹션 이동 안함
+      if (App.State.currentLane !== 0) return;
 
       // 터널 움직임 효과
       const speedMultiplier = Math.min(Math.abs(e.deltaY) / 50, 1);
@@ -437,20 +466,50 @@
 
     // ===== 키보드 이벤트 =====
     document.addEventListener('keydown', e => {
-      if (App.State.cardLayout === 'carousel') {
+      // 검색창에 포커스 중이면 무시
+      if (document.activeElement.tagName === 'INPUT') return;
+
+      // 캐러셀 모드
+      if (App.State.cardLayout === 'carousel' && App.State.currentLane === 0) {
         if (e.key === 'ArrowLeft' && App.Carousel) App.Carousel.carouselPrev();
         if (e.key === 'ArrowRight' && App.Carousel) App.Carousel.carouselNext();
         if (e.key === 'ArrowUp' && App.Sections) App.Sections.goToSection(App.State.currentSection - 1);
         if (e.key === 'ArrowDown' && App.Sections) App.Sections.goToSection(App.State.currentSection + 1);
-      } else {
-        if ((e.key === 'ArrowDown' || e.key === 'ArrowRight') && App.Sections) {
-          App.Sections.goToSection(App.State.currentSection + 1);
+      }
+      // 그리드 모드
+      else if (App.State.cardLayout === 'grid') {
+        // CENTER 레인: 좌우 키는 레인 전환
+        if (App.State.currentLane === 0) {
+          if (e.key === 'ArrowLeft' && App.Lanes) {
+            App.Lanes.goToLane(-1); // LEFT 레인으로
+          }
+          if (e.key === 'ArrowRight' && App.Lanes) {
+            App.Lanes.goToLane(1); // RIGHT 레인으로
+          }
+          if (e.key === 'ArrowUp' && App.Sections) {
+            App.Sections.goToSection(App.State.currentSection - 1);
+          }
+          if (e.key === 'ArrowDown' && App.Sections) {
+            App.Sections.goToSection(App.State.currentSection + 1);
+          }
         }
-        if ((e.key === 'ArrowUp' || e.key === 'ArrowLeft') && App.Sections) {
-          App.Sections.goToSection(App.State.currentSection - 1);
+        // LEFT 또는 RIGHT 레인: 좌우 키로 CENTER로 복귀
+        else {
+          if (e.key === 'ArrowLeft' && App.State.currentLane === 1 && App.Lanes) {
+            App.Lanes.goToLane(0); // RIGHT에서 CENTER로
+          }
+          if (e.key === 'ArrowRight' && App.State.currentLane === -1 && App.Lanes) {
+            App.Lanes.goToLane(0); // LEFT에서 CENTER로
+          }
         }
       }
+
       if (e.key === 'Escape') {
+        // Escape로 CENTER 레인으로 복귀
+        if (App.State.currentLane !== 0 && App.Lanes) {
+          App.Lanes.goToLane(0);
+          return;
+        }
         App.UI.closeModal();
         App.UI.hideContextMenu();
         App.UI.hideSettingsMenu();

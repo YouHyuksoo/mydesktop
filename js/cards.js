@@ -185,6 +185,11 @@
           // 새 탭에서 열기
           window.open(shortcut.url, '_blank');
 
+          // 히스토리에 추가
+          if (App.Lanes && App.Lanes.addToHistory) {
+            App.Lanes.addToHistory(shortcut);
+          }
+
           // 카드 상태 복원
           setTimeout(() => {
             card.classList.remove('opening');

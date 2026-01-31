@@ -51,6 +51,11 @@ window.App = window.App || {};
     App.Cards.renderCards();
     App.Events.initEventListeners();
 
+    // 레인 시스템 초기화
+    if (App.Lanes) {
+      App.Lanes.init();
+    }
+
     // 위젯 초기화
     App.Widgets.updateClock();
     setInterval(App.Widgets.updateClock, 1000);

@@ -77,6 +77,24 @@
   #section-info { top: 30px; }
   .section-cards { gap: 10px; max-width: 320px; }
 
+  #search-container {
+    bottom: 15px;
+    left: 15px;
+    width: 200px;
+  }
+
+  .search-box {
+    padding: 8px 12px;
+  }
+
+  #search-input {
+    font-size: 12px;
+  }
+
+  .search-results {
+    max-height: 200px;
+  }
+
   #system-widget {
     display: none;
   }

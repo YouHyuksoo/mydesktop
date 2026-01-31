@@ -237,6 +237,11 @@
     searchInput.value = '';
     searchInput.blur();
 
+    // CENTER 레인이 아니면 CENTER로 이동
+    if (App.State.currentLane !== 0 && App.Lanes) {
+      App.Lanes.goToLane(0);
+    }
+
     // 카테고리 id를 섹션 인덱스로 변환
     const categories = App.Categories ? App.Categories.getAll() : [];
     const targetSectionIndex = categories.findIndex(c => c.id === shortcut.layer);
@@ -244,15 +249,20 @@
 
     if (targetSectionIndex === -1) return; // 카테고리를 찾지 못함
 
-    if (targetSectionIndex !== currentSection) {
-      // 섹션 이동
-      App.Sections.goToSection(targetSectionIndex);
-    }
+    // 레인 전환 대기 시간 추가
+    const laneDelay = App.State.currentLane !== 0 ? 500 : 0;
 
-    // 약간의 딜레이 후 카드 하이라이트
     setTimeout(() => {
-      highlightCard(shortcut.id);
-    }, targetSectionIndex !== currentSection ? 600 : 100);
+      if (targetSectionIndex !== currentSection) {
+        // 섹션 이동
+        App.Sections.goToSection(targetSectionIndex);
+      }
+
+      // 약간의 딜레이 후 카드 하이라이트
+      setTimeout(() => {
+        highlightCard(shortcut.id);
+      }, targetSectionIndex !== currentSection ? 600 : 100);
+    }, laneDelay);
   }
 
   /**

@@ -24,6 +24,15 @@ App.state = App.State = {
   selectedColor: '#ffd700',
   contextTargetId: null,
 
+  // 레인 시스템 (X축 좌/우 전환)
+  currentLane: 0,              // -1: LEFT(히스토리), 0: CENTER(메인), 1: RIGHT(도구)
+  isLaneTransitioning: false,
+  laneData: {
+    left: [],                  // 히스토리 (최근 사용한 바로가기)
+    center: null,              // 메인 카테고리 (기존 섹션들)
+    right: []                  // 도구/설정 카드들
+  },
+
   // 설정
   tunnelShape: 'triangle',
   glowIntensity: 0,
