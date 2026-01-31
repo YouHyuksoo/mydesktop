@@ -11,17 +11,8 @@
 (function(App) {
   'use strict';
 
-  // ===== 무지개 색상 팔레트 =====
-  const RAINBOW_COLORS = [
-    { r: 255, g: 107, b: 107 },  // red
-    { r: 255, g: 159, b: 67 },   // orange
-    { r: 255, g: 215, b: 0 },    // yellow
-    { r: 78, g: 205, b: 196 },   // teal
-    { r: 69, g: 183, b: 209 },   // blue
-    { r: 165, g: 94, b: 234 },   // purple
-    { r: 255, g: 107, b: 182 },  // pink
-    { r: 38, g: 222, b: 129 },   // green
-  ];
+  // config.js에서 무지개 색상 가져오기
+  const RAINBOW_COLORS = App.Config.RAINBOW_COLORS;
 
   /**
    * URL에서 도메인 추출

@@ -279,7 +279,7 @@
 
     // CSS 변수 업데이트
     document.documentElement.style.setProperty('--accent', theme.primary);
-    document.documentElement.style.setProperty('--accent2', theme.secondary);
+    document.documentElement.style.setProperty('--accent-secondary', theme.secondary);
 
     // 글로우 오브 색상 변경
     const orbs = document.querySelectorAll('.glow-orb');

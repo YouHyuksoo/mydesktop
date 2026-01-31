@@ -80,22 +80,9 @@
       });
     }
 
-    // 터널 링에 펄스 효과
-    if (App.State.tunnelRings) {
-      App.State.tunnelRings.forEach((ring, i) => {
-        const delay = i * 0.02;
-        gsap.to(ring.material, {
-          opacity: 1,
-          duration: 0.1,
-          delay: delay,
-          onComplete: () => {
-            gsap.to(ring.material, {
-              opacity: 0.6,
-              duration: 0.5
-            });
-          }
-        });
-      });
+    // 터널 링에 펄스 효과 (App.Space 모듈 사용)
+    if (App.Space && App.Space.pulseRings) {
+      App.Space.pulseRings();
     }
 
     // 정리
