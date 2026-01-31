@@ -113,7 +113,8 @@
       const yOffset = offset > 0 ? -40 : (offset < 0 ? 40 : 0);
 
       // 현재 섹션과 앞/뒤 1개만 보이게, 나머지는 숨김
-      const opacity = absOffset <= 1 ? (offset === 0 ? 1 : 0.3) : 0;
+      // 뒤 섹션은 0.1로 매우 투명하게 (앞 카드와 확실히 구분)
+      const opacity = absOffset <= 1 ? (offset === 0 ? 1 : 0.1) : 0;
 
       // z-index로 렌더링 순서 강제
       const zIndex = 100 - absOffset;
@@ -191,7 +192,8 @@
       const yOffset = offset > 0 ? -30 : (offset < 0 ? 30 : 0);
 
       // 현재 섹션과 앞/뒤 1개만 보이게, 나머지는 숨김
-      const opacity = absOffset <= 1 ? (offset === 0 ? 1 : 0.3) : 0;
+      // 뒤 섹션은 0.1로 매우 투명하게 (앞 카드와 확실히 구분)
+      const opacity = absOffset <= 1 ? (offset === 0 ? 1 : 0.1) : 0;
 
       // z-index로 렌더링 순서 강제 (현재 섹션이 가장 위)
       const zIndex = 100 - absOffset;
