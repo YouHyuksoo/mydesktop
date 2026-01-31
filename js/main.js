@@ -41,6 +41,8 @@ window.App = window.App || {};
     // 공간 타입에 따라 생성
     if (App.State.spaceType === 'warp') {
       App.Space.createCosmicWarp();
+    } else if (App.State.spaceType === 'aurora') {
+      App.Space.createAurora();
     } else {
       App.Space.createTunnel();
     }
