@@ -98,6 +98,7 @@ window.App = window.App || {};
           App.Effects.startMeteorShower();
           App.Effects.startUfoVisits();
           App.Effects.startCardSleepSystem();
+          App.Effects.startCrowAttacks();
         }
       });
     }, 500);
