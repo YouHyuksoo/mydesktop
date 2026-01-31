@@ -97,6 +97,7 @@ window.App = window.App || {};
           App.UI.animateEntrance();
           App.Effects.startMeteorShower();
           App.Effects.startUfoVisits();
+          App.Effects.startCardSleepSystem();
         }
       });
     }, 500);

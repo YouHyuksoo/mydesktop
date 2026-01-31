@@ -2394,3 +2394,56 @@
 .tentacle.t2 { left: 10px; }
 .tentacle.t3 { left: 20px; }
 .tentacle.t4 { left: 30px; }
+
+/* ===== Card Sleeping System ===== */
+.shortcut-card.sleeping {
+  filter: brightness(0.7) saturate(0.5);
+}
+
+.sleep-bubble {
+  position: absolute;
+  top: -10px;
+  right: -5px;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.sleep-bubble .z {
+  position: absolute;
+  font-weight: bold;
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent);
+  animation: floatZ 2s ease-in-out infinite;
+}
+
+.sleep-bubble .z1 {
+  font-size: 16px;
+  right: 0;
+  top: 0;
+  animation-delay: 0s;
+}
+
+.sleep-bubble .z2 {
+  font-size: 12px;
+  right: -8px;
+  top: -12px;
+  animation-delay: 0.3s;
+}
+
+.sleep-bubble .z3 {
+  font-size: 9px;
+  right: -12px;
+  top: -20px;
+  animation-delay: 0.6s;
+}
+
+@keyframes floatZ {
+  0%, 100% {
+    transform: translateY(0) rotate(-10deg);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-5px) rotate(10deg);
+    opacity: 1;
+  }
+}
