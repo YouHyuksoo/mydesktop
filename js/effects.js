@@ -388,13 +388,15 @@ App.Effects = (function() {
       duration: 2,
       ease: 'power1.in',
       onUpdate: function() {
-        // 카드도 함께 이동
+        // 카드도 함께 이동 (gsap.getProperty로 정확한 애니메이션 값 가져오기)
         if (cardClone && isStolen) {
-          const crowRect = crow.getBoundingClientRect();
+          const crowLeft = gsap.getProperty(crow, 'left');
+          const crowTop = gsap.getProperty(crow, 'top');
+          const crowRotation = gsap.getProperty(crow, 'rotation');
           gsap.set(cardClone, {
-            left: crowRect.left + 10,
-            top: crowRect.top + 40,
-            rotation: gsap.getProperty(crow, 'rotation') * 0.5,
+            left: crowLeft + 10,
+            top: crowTop + 40,
+            rotation: crowRotation * 0.5,
             scale: 0.7
           });
         }
