@@ -623,14 +623,17 @@
       }
     });
 
-    // ===== 아바타 클릭 시 별 날아오기 효과 =====
+    // ===== 아바타 클릭 시 YouTube Music 재생 =====
     const creditsAvatar = document.querySelector('.credits-avatar');
     if (creditsAvatar) {
       creditsAvatar.addEventListener('click', e => {
         e.stopPropagation();
+        // 별 애니메이션
         if (App.Effects && App.Effects.createStarFlyby) {
           App.Effects.createStarFlyby();
         }
+        // YouTube Music 바로 재생
+        window.open('https://music.youtube.com/watch?v=304DNFmHN5U', '_blank');
       });
       creditsAvatar.style.cursor = 'pointer';
     }
