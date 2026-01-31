@@ -77,22 +77,68 @@
   #section-info { top: 30px; }
   .section-cards { gap: 10px; max-width: 320px; }
 
+  /* 모바일 검색창 - 아이콘 토글 방식 */
   #search-container {
     bottom: 15px;
     left: 15px;
-    width: 200px;
+    width: auto;
   }
 
   .search-box {
-    padding: 8px 12px;
+    padding: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  #search-input {
-    font-size: 12px;
+  .search-box .search-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+  }
+
+  /* 펼쳐진 상태에서 아이콘 hover 효과 */
+  #search-container.search-expanded .search-box .search-icon:hover {
+    color: var(--accent);
+  }
+
+  .search-box #search-input {
+    width: 0;
+    padding: 0;
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+
+  .search-box .search-shortcut {
+    display: none;
+  }
+
+  /* 검색창 펼쳐진 상태 */
+  #search-container.search-expanded .search-box {
+    width: 220px;
+    border-radius: 12px;
+    padding: 10px 14px;
+    justify-content: flex-start;
+  }
+
+  #search-container.search-expanded .search-box #search-input {
+    width: 100%;
+    padding: 0 10px;
+    opacity: 1;
   }
 
   .search-results {
     max-height: 200px;
+  }
+
+  /* 검색 결과 위치 조정 */
+  #search-container.search-expanded .search-results {
+    width: 220px;
   }
 
   #system-widget {

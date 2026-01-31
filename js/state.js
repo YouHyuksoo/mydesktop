@@ -39,7 +39,7 @@ App.state = App.State = {
   glowTheme: 'gold',
   iconColorMode: 'brand',
   cardStyle: 'glass',
-  spaceType: 'tunnel',
+  spaceType: 'aurora',
   cardLayout: 'grid',
   carouselIndex: 0,
 

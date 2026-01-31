@@ -184,22 +184,35 @@
   }
 
   /**
-   * 공간 타입 전환
+   * 공간 타입 전환 (tunnel -> warp -> aurora -> tunnel)
    */
   function changeSpaceType() {
-    const newType = App.State.spaceType === 'tunnel' ? 'warp' : 'tunnel';
+    // 3가지 타입 순환
+    const spaceTypes = ['tunnel', 'warp', 'aurora'];
+    const currentIndex = spaceTypes.indexOf(App.State.spaceType);
+    const newIndex = (currentIndex + 1) % spaceTypes.length;
+    const newType = spaceTypes[newIndex];
+
     App.State.spaceType = newType;
     App.saveSettings();
 
     App.Space.clearSpace();
     if (newType === 'warp') {
       App.Space.createCosmicWarp();
+    } else if (newType === 'aurora') {
+      App.Space.createAurora();
     } else {
       App.Space.createTunnel();
     }
 
     App.UI.updateSpaceMenu();
-    App.showToast(newType === 'warp' ? '🌌 코스믹 워프' : '🔺 클래식 터널');
+
+    const toastMessages = {
+      tunnel: '🔺 클래식 터널',
+      warp: '🌌 코스믹 워프',
+      aurora: '✨ 오로라'
+    };
+    App.showToast(toastMessages[newType]);
     App.UI.hideSettingsMenu();
   }
 
@@ -610,14 +623,20 @@
     function updateSpaceToggleIcon() {
       const tunnelIcon = document.getElementById('space-icon-tunnel');
       const warpIcon = document.getElementById('space-icon-warp');
-      if (tunnelIcon && warpIcon) {
-        if (App.State.spaceType === 'tunnel') {
-          tunnelIcon.style.display = 'block';
-          warpIcon.style.display = 'none';
-        } else {
-          tunnelIcon.style.display = 'none';
-          warpIcon.style.display = 'block';
-        }
+      const auroraIcon = document.getElementById('space-icon-aurora');
+
+      // 모든 아이콘 숨기기
+      if (tunnelIcon) tunnelIcon.style.display = 'none';
+      if (warpIcon) warpIcon.style.display = 'none';
+      if (auroraIcon) auroraIcon.style.display = 'none';
+
+      // 현재 타입에 맞는 아이콘만 표시
+      if (App.State.spaceType === 'tunnel' && tunnelIcon) {
+        tunnelIcon.style.display = 'block';
+      } else if (App.State.spaceType === 'warp' && warpIcon) {
+        warpIcon.style.display = 'block';
+      } else if (App.State.spaceType === 'aurora' && auroraIcon) {
+        auroraIcon.style.display = 'block';
       }
     }
 

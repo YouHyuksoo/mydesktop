@@ -13,8 +13,40 @@
 
   let searchInput;
   let searchResults;
+  let searchContainer;
+  let searchBox;
   let activeIndex = -1;
   let currentResults = [];
+
+  /**
+   * 모바일 여부 확인
+   */
+  function isMobile() {
+    return window.innerWidth <= 480;
+  }
+
+  /**
+   * 검색창 펼치기/접기 토글 (모바일용)
+   */
+  function toggleSearchExpand(forceState) {
+    if (!searchContainer) return;
+
+    const isExpanded = searchContainer.classList.contains('search-expanded');
+    const shouldExpand = forceState !== undefined ? forceState : !isExpanded;
+
+    if (shouldExpand) {
+      searchContainer.classList.add('search-expanded');
+      // 약간의 딜레이 후 포커스 (애니메이션 완료 대기)
+      setTimeout(() => {
+        searchInput.focus();
+      }, 150);
+    } else {
+      searchContainer.classList.remove('search-expanded');
+      searchInput.value = '';
+      searchInput.blur();
+      closeSearch();
+    }
+  }
 
   /**
    * 검색 기능 초기화
@@ -22,6 +54,8 @@
   function initSearch() {
     searchInput = document.getElementById('search-input');
     searchResults = document.getElementById('search-results');
+    searchContainer = document.getElementById('search-container');
+    searchBox = document.querySelector('.search-box');
 
     if (!searchInput || !searchResults) return;
 
@@ -38,10 +72,35 @@
       }
     });
 
+    // 모바일: 검색 아이콘 클릭 시 토글
+    if (searchBox) {
+      searchBox.addEventListener('click', (e) => {
+        if (isMobile()) {
+          const isExpanded = searchContainer.classList.contains('search-expanded');
+          // 접힌 상태에서 클릭하면 펼치기
+          if (!isExpanded) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSearchExpand(true);
+          }
+          // 펼쳐진 상태에서 아이콘 클릭하면 접기
+          else if (e.target.closest('.search-icon')) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSearchExpand(false);
+          }
+        }
+      });
+    }
+
     // 외부 클릭 시 닫기
     document.addEventListener('click', (e) => {
       if (!e.target.closest('#search-container')) {
         closeSearch();
+        // 모바일에서 외부 클릭 시 검색창 접기
+        if (isMobile()) {
+          toggleSearchExpand(false);
+        }
       }
     });
 
@@ -49,12 +108,27 @@
     document.addEventListener('keydown', (e) => {
       if (e.key === '/' && !isInputFocused()) {
         e.preventDefault();
-        searchInput.focus();
+        // 모바일에서는 펼치기
+        if (isMobile()) {
+          toggleSearchExpand(true);
+        } else {
+          searchInput.focus();
+        }
       }
       // ESC로 검색창 닫기
       if (e.key === 'Escape' && document.activeElement === searchInput) {
         closeSearch();
         searchInput.blur();
+        if (isMobile()) {
+          toggleSearchExpand(false);
+        }
+      }
+    });
+
+    // 윈도우 리사이즈 시 상태 초기화
+    window.addEventListener('resize', () => {
+      if (!isMobile() && searchContainer) {
+        searchContainer.classList.remove('search-expanded');
       }
     });
   }
@@ -305,7 +379,9 @@
   // App.Search로 export
   App.Search = {
     init: initSearch,
-    close: closeSearch
+    close: closeSearch,
+    toggle: toggleSearchExpand,
+    isMobile: isMobile
   };
 
   // DOM 로드 후 초기화

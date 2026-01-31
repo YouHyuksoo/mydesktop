@@ -170,7 +170,12 @@
   function updateSpaceMenu() {
     const label = document.getElementById('space-type-label');
     if (label) {
-      label.textContent = App.State.spaceType === 'warp' ? '공간: 코스믹 워프' : '공간: 클래식 터널';
+      const spaceLabels = {
+        tunnel: '공간: 클래식 터널',
+        warp: '공간: 코스믹 워프',
+        aurora: '공간: 오로라'
+      };
+      label.textContent = spaceLabels[App.State.spaceType] || spaceLabels.tunnel;
     }
   }
 
