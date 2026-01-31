@@ -503,10 +503,13 @@
         ease: 'power2.out',
         stagger: 0.03,
         onComplete: () => {
-          // active 섹션 설정
-          centerElements.forEach((section, i) => {
-            section.classList.toggle('active', i === App.State.currentSection);
-          });
+          // 섹션 깊이/opacity 복원 (뒤에 있는 섹션은 어둡게)
+          App.Sections.updateCardsDepth();
+
+          // 그리드 스크롤 버튼 상태 업데이트
+          if (App.Events && App.Events.updateGridScrollButtons) {
+            App.Events.updateGridScrollButtons();
+          }
         }
       });
 
