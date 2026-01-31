@@ -623,6 +623,18 @@
       }
     });
 
+    // ===== 아바타 클릭 시 별 날아오기 효과 =====
+    const creditsAvatar = document.querySelector('.credits-avatar');
+    if (creditsAvatar) {
+      creditsAvatar.addEventListener('click', e => {
+        e.stopPropagation();
+        if (App.Effects && App.Effects.createStarFlyby) {
+          App.Effects.createStarFlyby();
+        }
+      });
+      creditsAvatar.style.cursor = 'pointer';
+    }
+
     // ===== 컬러 바 =====
     document.querySelectorAll('.color-bar-btn').forEach(btn => {
       btn.addEventListener('click', () => {

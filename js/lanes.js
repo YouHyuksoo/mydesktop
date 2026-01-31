@@ -428,6 +428,11 @@
     App.State.currentLane = laneId;
     updateLaneIndicator();
 
+    // 캐러셀 화살표 표시 업데이트
+    if (App.Carousel && App.Carousel.updateNavArrowsVisibility) {
+      App.Carousel.updateNavArrowsVisibility();
+    }
+
     setTimeout(() => {
       App.State.isLaneTransitioning = false;
     }, 600);

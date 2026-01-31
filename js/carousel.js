@@ -1,37 +1,58 @@
 /**
  * @file js/carousel.js
- * @description 캐러셀 레이아웃 관련 함수 모음
+ * @description 캐러셀 레이아웃 - 가상화로 최대 8개만 렌더링
  *
  * 초보자 가이드:
- * 1. **주요 개념**: 카드들을 3D 원형 캐러셀로 배치하고 회전 네비게이션 제공
+ * 1. **주요 개념**: 카드가 많아도 8개만 DOM에 렌더링하여 성능 최적화
  * 2. **사용 방법**: App.Carousel.goToCarouselIndex(index) 로 특정 카드로 이동
- * 3. **의존성**: App.state, GSAP 라이브러리 필요
+ * 3. **의존성**: App.state, App.Cards, GSAP 라이브러리 필요
  */
 
 (function(App) {
   'use strict';
 
+  // 한 번에 보여줄 최대 카드 수
+  const VISIBLE_SLOTS = 8;
+
   /**
-   * 캐러셀 UI 업데이트 (점 인디케이터)
+   * 현재 섹션의 바로가기 목록 가져오기
+   */
+  function getCurrentShortcuts() {
+    const sections = App.Cards.getSections ? App.Cards.getSections() :
+                     (App.Categories ? App.Categories.getAll() : App.config.SECTIONS);
+    const currentSection = sections[App.state.currentSection];
+    if (!currentSection) return [];
+
+    return App.state.shortcuts.filter(s => s.layer === currentSection.id);
+  }
+
+  /**
+   * 캐러셀 UI 업데이트 (점 인디케이터 - 페이지 단위)
    */
   function updateCarouselUI() {
-    const activeSection = document.querySelector('.section-cards.active');
-    if (!activeSection) return;
-
-    const cards = activeSection.querySelectorAll('.shortcut-card');
+    const shortcuts = getCurrentShortcuts();
+    const totalCards = shortcuts.length;
     const dotsContainer = document.getElementById('carousel-dots');
 
-    // 점 인디케이터만 표시
+    if (totalCards === 0) {
+      dotsContainer.classList.remove('visible');
+      return;
+    }
+
     dotsContainer.classList.add('visible');
 
-    // 점 생성
+    // 페이지 수 계산 (8개씩)
+    const totalPages = Math.ceil(totalCards / VISIBLE_SLOTS);
+    const currentPage = Math.floor(App.state.carouselIndex / VISIBLE_SLOTS);
+
+    // 점 생성 (페이지 단위)
     dotsContainer.innerHTML = '';
-    cards.forEach((_, i) => {
+    for (let i = 0; i < totalPages; i++) {
       const dot = document.createElement('div');
-      dot.className = 'carousel-dot' + (i === App.state.carouselIndex ? ' active' : '');
-      dot.addEventListener('click', () => goToCarouselIndex(i));
+      dot.className = 'carousel-dot' + (i === currentPage ? ' active' : '');
+      dot.addEventListener('click', () => goToCarouselIndex(i * VISIBLE_SLOTS));
       dotsContainer.appendChild(dot);
-    });
+    }
   }
 
   /**
@@ -39,6 +60,39 @@
    */
   function hideCarouselUI() {
     document.getElementById('carousel-dots').classList.remove('visible');
+  }
+
+  /**
+   * 캐러셀 슬롯 렌더링 (8개만)
+   */
+  function renderCarouselSlots() {
+    const activeSection = document.querySelector('.section-cards.active');
+    if (!activeSection) return;
+
+    const shortcuts = getCurrentShortcuts();
+    const totalCards = shortcuts.length;
+
+    if (totalCards === 0) {
+      activeSection.innerHTML = '<div class="empty-message">바로가기가 없습니다</div>';
+      return;
+    }
+
+    // 현재 페이지의 시작 인덱스
+    const pageStart = Math.floor(App.state.carouselIndex / VISIBLE_SLOTS) * VISIBLE_SLOTS;
+    const pageEnd = Math.min(pageStart + VISIBLE_SLOTS, totalCards);
+    const visibleShortcuts = shortcuts.slice(pageStart, pageEnd);
+
+    // 기존 카드 제거
+    activeSection.innerHTML = '';
+
+    // 보이는 카드만 렌더링
+    visibleShortcuts.forEach((shortcut, i) => {
+      const card = App.Cards.createCard(shortcut, pageStart + i);
+      activeSection.appendChild(card);
+    });
+
+    // 3D 위치 업데이트
+    updateCarouselPosition(true);
   }
 
   /**
@@ -54,33 +108,34 @@
     if (cardCount === 0) return;
 
     const isMobile = window.innerWidth <= 768;
-    // 카드 수에 따라 반지름 조정 (카드가 적으면 작게)
-    const baseRadius = isMobile ? 180 : 280;
-    const radius = Math.min(baseRadius, baseRadius * (cardCount / 6));
-    const angleStep = (Math.PI * 2) / Math.max(cardCount, 5); // 최소 5등분
+
+    // 8개 이하이므로 적절한 반지름
+    const baseRadius = isMobile ? 200 : 320;
+    const radius = baseRadius;
+    const angleStep = (Math.PI * 2) / Math.max(cardCount, 5);
+
+    // 페이지 내 로컬 인덱스
+    const pageStart = Math.floor(App.state.carouselIndex / VISIBLE_SLOTS) * VISIBLE_SLOTS;
+    const localIndex = App.state.carouselIndex - pageStart;
 
     cards.forEach((card, i) => {
-      // 현재 카드의 각도 계산
-      const angle = angleStep * (i - App.state.carouselIndex);
+      const angle = angleStep * (i - localIndex);
 
       let x = 0, y = 0, z = 0, scale = 1, rotateY = 0, opacity = 1;
 
-      // 앞쪽(angle=0)이 가장 크고 밝게
-      const depth = Math.cos(angle); // -1 ~ 1 (앞쪽이 1)
-      const normalizedDepth = (depth + 1) / 2; // 0 ~ 1
+      const depth = Math.cos(angle);
+      const normalizedDepth = (depth + 1) / 2;
 
       if (isMobile) {
-        // 모바일: 세로 캐러셀 - 3장이 잘 보이도록
-        y = Math.sin(angle) * radius * 0.9; // 간격 넓힘
-        z = depth * 120; // 깊이감 줄여서 더 잘 보이게
-        scale = 0.75 + 0.25 * normalizedDepth; // 사이드 카드 더 크게 (0.75~1.0)
-        opacity = 0.65 + 0.35 * normalizedDepth; // 사이드 카드 더 밝게 (0.65~1.0)
-      } else {
-        // 데스크톱: 가로 캐러셀 - 정면에서 뒤로 좁아지는 형태
-        x = Math.sin(angle) * radius;
-        z = depth * 200; // 중앙(depth=1)이 앞으로, 양쪽(depth<1)이 뒤로
-        rotateY = -angle * (180 / Math.PI) * 0.5;
+        y = Math.sin(angle) * radius * 0.8;
+        z = depth * 150;
         scale = 0.7 + 0.3 * normalizedDepth;
+        opacity = 0.6 + 0.4 * normalizedDepth;
+      } else {
+        x = Math.sin(angle) * radius;
+        z = depth * 250;
+        rotateY = -angle * (180 / Math.PI) * 0.4;
+        scale = 0.65 + 0.35 * normalizedDepth;
         opacity = 0.5 + 0.5 * normalizedDepth;
       }
 
@@ -92,16 +147,20 @@
       } else {
         gsap.to(card, {
           x, y, z, scale, rotateY, opacity, zIndex,
-          duration: 0.6,
-          ease: 'power3.out'
+          duration: 0.25,
+          ease: 'power2.out'
         });
       }
       card.style.pointerEvents = pointerEvents;
     });
 
     // 점 업데이트
+    const totalCards = getCurrentShortcuts().length;
+    const totalPages = Math.ceil(totalCards / VISIBLE_SLOTS);
+    const currentPage = Math.floor(App.state.carouselIndex / VISIBLE_SLOTS);
+
     document.querySelectorAll('.carousel-dot').forEach((dot, i) => {
-      dot.classList.toggle('active', i === App.state.carouselIndex);
+      dot.classList.toggle('active', i === currentPage);
     });
   }
 
@@ -110,19 +169,26 @@
    * @param {number} index - 이동할 카드 인덱스
    */
   function goToCarouselIndex(index) {
-    const activeSection = document.querySelector('.section-cards.active');
-    if (!activeSection) return;
+    const shortcuts = getCurrentShortcuts();
+    const totalCards = shortcuts.length;
+    if (totalCards === 0) return;
 
-    const cards = activeSection.querySelectorAll('.shortcut-card');
-    const cardCount = cards.length;
-    if (cardCount === 0) return;
+    // 순환 처리
+    if (index < 0) index = totalCards - 1;
+    if (index >= totalCards) index = 0;
 
-    // 순환 처리 (360도 회전)
-    if (index < 0) index = cardCount - 1;
-    if (index >= cardCount) index = 0;
+    const oldPage = Math.floor(App.state.carouselIndex / VISIBLE_SLOTS);
+    const newPage = Math.floor(index / VISIBLE_SLOTS);
 
     App.state.carouselIndex = index;
-    updateCarouselPosition();
+
+    // 페이지가 바뀌면 슬롯 재렌더링
+    if (oldPage !== newPage) {
+      renderCarouselSlots();
+      updateCarouselUI();
+    } else {
+      updateCarouselPosition();
+    }
   }
 
   /**
@@ -149,6 +215,10 @@
     App.saveSettings();
     App.Cards.renderCards();
     updateCardLayoutLabel();
+
+    // 화살표 표시/숨김 업데이트
+    updateNavArrowsVisibility();
+
     App.showToast(layout === 'carousel' ? '🎠 캐러셀 배치' : '📦 그리드 배치');
   }
 
@@ -162,8 +232,82 @@
     }
   }
 
+  /**
+   * 캐러셀 초기화 (섹션 변경 시 호출)
+   */
+  function initCarousel() {
+    if (App.state.cardLayout !== 'carousel') return;
+
+    App.state.carouselIndex = 0;
+    renderCarouselSlots();
+    updateCarouselUI();
+  }
+
+  /**
+   * 캐러셀 네비게이션 화살표 생성
+   */
+  function createCarouselNavArrows() {
+    // 이미 존재하면 제거
+    const existing = document.getElementById('carousel-nav-arrows');
+    if (existing) existing.remove();
+
+    const container = document.createElement('div');
+    container.id = 'carousel-nav-arrows';
+    container.innerHTML = `
+      <div class="carousel-nav-arrow carousel-nav-prev">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+        </svg>
+      </div>
+      <div class="carousel-nav-arrow carousel-nav-next">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>
+        </svg>
+      </div>
+    `;
+
+    document.body.appendChild(container);
+
+    const prevArrow = container.querySelector('.carousel-nav-prev');
+    const nextArrow = container.querySelector('.carousel-nav-next');
+
+    // 클릭으로 이동
+    prevArrow.addEventListener('click', carouselPrev);
+    nextArrow.addEventListener('click', carouselNext);
+
+    updateNavArrowsVisibility();
+  }
+
+  /**
+   * 네비게이션 화살표 표시/숨김
+   */
+  function updateNavArrowsVisibility() {
+    const container = document.getElementById('carousel-nav-arrows');
+    if (!container) return;
+
+    const isCarousel = App.state.cardLayout === 'carousel';
+    const isCenter = App.state.currentLane === 0;
+    const hasCards = getCurrentShortcuts().length > 0;
+
+    if (isCarousel && isCenter && hasCards) {
+      container.classList.add('visible');
+    } else {
+      container.classList.remove('visible');
+    }
+  }
+
+  /**
+   * 네비게이션 화살표 제거
+   */
+  function removeCarouselNavArrows() {
+    const container = document.getElementById('carousel-nav-arrows');
+    if (container) container.remove();
+    stopHoverRotation();
+  }
+
   // ===== App.Carousel로 export =====
   App.Carousel = {
+    VISIBLE_SLOTS: VISIBLE_SLOTS,
     updateCarouselUI: updateCarouselUI,
     hideCarouselUI: hideCarouselUI,
     updateCarouselPosition: updateCarouselPosition,
@@ -171,7 +315,20 @@
     carouselPrev: carouselPrev,
     carouselNext: carouselNext,
     changeCardLayout: changeCardLayout,
-    updateCardLayoutLabel: updateCardLayoutLabel
+    updateCardLayoutLabel: updateCardLayoutLabel,
+    renderCarouselSlots: renderCarouselSlots,
+    initCarousel: initCarousel,
+    getCurrentShortcuts: getCurrentShortcuts,
+    createCarouselNavArrows: createCarouselNavArrows,
+    updateNavArrowsVisibility: updateNavArrowsVisibility,
+    removeCarouselNavArrows: removeCarouselNavArrows
   };
+
+  // 페이지 로드 시 화살표 생성
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', createCarouselNavArrows);
+  } else {
+    setTimeout(createCarouselNavArrows, 100);
+  }
 
 })(window.App = window.App || {});

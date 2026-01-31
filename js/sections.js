@@ -136,11 +136,11 @@
             section.classList.add('active');
             // 스크롤 위치 초기화
             section.scrollTop = 0;
-            // 캐러셀 모드면 애니메이션 완료 후 즉시 위치 설정
+            // 캐러셀 모드면 슬롯 재렌더링 (가상화)
             if (App.state.cardLayout === 'carousel') {
               App.state.carouselIndex = 0;
+              App.Carousel.renderCarouselSlots();
               App.Carousel.updateCarouselUI();
-              App.Carousel.updateCarouselPosition(true);
             }
             // 그리드 스크롤 버튼 상태 업데이트
             if (App.Events && App.Events.updateGridScrollButtons) {

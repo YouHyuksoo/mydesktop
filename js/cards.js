@@ -231,35 +231,39 @@
     space.innerHTML = '';
 
     const SECTIONS = getSections();
+    const isCarousel = App.state.cardLayout === 'carousel';
 
     SECTIONS.forEach((section, sectionIndex) => {
       const sectionDiv = document.createElement('div');
       sectionDiv.className = 'section-cards';
 
-      if (App.state.cardLayout === 'carousel') {
+      if (isCarousel) {
         sectionDiv.classList.add('carousel-layout');
       }
 
       sectionDiv.dataset.section = sectionIndex;
       sectionDiv.dataset.label = section.name;
 
-      // layer가 section.id와 일치하는 바로가기 필터링
-      const sectionShortcuts = App.state.shortcuts.filter(s => s.layer === section.id);
-      sectionShortcuts.forEach((shortcut, i) => {
-        const card = createCard(shortcut, i);
-        sectionDiv.appendChild(card);
-      });
+      // 캐러셀 모드가 아닐 때만 모든 카드 렌더링
+      // 캐러셀 모드에서는 나중에 renderCarouselSlots에서 처리
+      if (!isCarousel) {
+        const sectionShortcuts = App.state.shortcuts.filter(s => s.layer === section.id);
+        sectionShortcuts.forEach((shortcut, i) => {
+          const card = createCard(shortcut, i);
+          sectionDiv.appendChild(card);
+        });
+      }
 
       space.appendChild(sectionDiv);
     });
 
     App.Sections.updateCardsDepth();
 
-    // 캐러셀 모드면 초기화 (즉시 위치 설정)
-    if (App.state.cardLayout === 'carousel') {
+    // 캐러셀 모드면 초기화 (8개만 렌더링)
+    if (isCarousel) {
       App.state.carouselIndex = 0;
+      App.Carousel.renderCarouselSlots();
       App.Carousel.updateCarouselUI();
-      App.Carousel.updateCarouselPosition(true);
     } else {
       App.Carousel.hideCarouselUI();
     }
@@ -287,6 +291,7 @@
     getIconContent: getIconContent,
     getSvgIcon: getSvgIcon,
     getDomain: getDomain,
+    getSections: getSections,
     RAINBOW_COLORS: RAINBOW_COLORS
   };
 
