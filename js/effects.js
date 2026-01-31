@@ -530,8 +530,8 @@ App.Effects = (function() {
    */
   function startCatPaws() {
     function scheduleNextCat() {
-      // 40초 ~ 90초 간격으로 고양이 등장
-      const delay = 40000 + Math.random() * 50000;
+      // 30초 ~ 70초 간격으로 발자국 등장
+      const delay = 30000 + Math.random() * 40000;
       setTimeout(() => {
         if (document.visibilityState === 'visible') {
           createCatPawEvent();
@@ -539,52 +539,56 @@ App.Effects = (function() {
         scheduleNextCat();
       }, delay);
     }
-    // 첫 고양이는 25초 후
-    setTimeout(scheduleNextCat, 25000);
+    // 첫 발자국은 15초 후
+    setTimeout(scheduleNextCat, 15000);
   }
 
   /**
-   * 고양이 발자국 이벤트 생성
+   * 고양이 발자국 이벤트 생성 - 화면을 가로질러 걸어감
    */
   function createCatPawEvent() {
-    const activeSection = document.querySelector('.section-cards.active');
-    if (!activeSection) return;
+    // 방향 결정 (왼쪽→오른쪽 또는 오른쪽→왼쪽, 또는 대각선)
+    const patterns = ['horizontal', 'diagonal-down', 'diagonal-up'];
+    const pattern = patterns[Math.floor(Math.random() * patterns.length)];
 
-    const cards = activeSection.querySelectorAll('.shortcut-card');
-    if (cards.length === 0) return;
-
-    // 랜덤 카드 선택 (밀 대상)
-    const targetCard = cards[Math.floor(Math.random() * cards.length)];
-    const cardRect = targetCard.getBoundingClientRect();
-
-    // 발자국 시작 위치 결정 (왼쪽 또는 오른쪽에서)
     const fromLeft = Math.random() > 0.5;
-    const startX = fromLeft ? -50 : window.innerWidth + 50;
-    const startY = 100 + Math.random() * (window.innerHeight - 300);
+    let startX, startY, endX, endY;
 
-    // 발자국 경로 생성 (카드를 향해)
-    const targetX = cardRect.left + (fromLeft ? cardRect.width + 30 : -30);
-    const targetY = cardRect.top + cardRect.height / 2;
+    if (pattern === 'horizontal') {
+      startX = fromLeft ? -80 : window.innerWidth + 80;
+      startY = 150 + Math.random() * (window.innerHeight - 400);
+      endX = fromLeft ? window.innerWidth + 80 : -80;
+      endY = startY + (Math.random() - 0.5) * 100;
+    } else if (pattern === 'diagonal-down') {
+      startX = fromLeft ? -80 : window.innerWidth + 80;
+      startY = 50 + Math.random() * 150;
+      endX = fromLeft ? window.innerWidth + 80 : -80;
+      endY = window.innerHeight - 100 - Math.random() * 150;
+    } else {
+      startX = fromLeft ? -80 : window.innerWidth + 80;
+      startY = window.innerHeight - 150 - Math.random() * 150;
+      endX = fromLeft ? window.innerWidth + 80 : -80;
+      endY = 50 + Math.random() * 150;
+    }
 
     // 발자국 찍기 시작
-    createPawPrints(startX, startY, targetX, targetY, fromLeft, () => {
-      // 발자국이 카드 근처에 도달하면 고양이 발 등장
-      createCatPawPush(targetCard, cardRect, fromLeft);
-    });
+    createPawPrints(startX, startY, endX, endY, fromLeft);
   }
 
   /**
-   * 발자국 경로 생성
+   * 발자국 경로 생성 - 큰 흰색 발자국
    */
-  function createPawPrints(startX, startY, endX, endY, fromLeft, onReachTarget) {
-    const stepCount = 8;
+  function createPawPrints(startX, startY, endX, endY, fromLeft) {
+    const stepCount = 12;
     const dx = (endX - startX) / stepCount;
     const dy = (endY - startY) / stepCount;
     let currentStep = 0;
 
+    // 이동 방향에 따른 회전 각도 계산
+    const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI) + 90;
+
     function createNextPaw() {
       if (currentStep >= stepCount) {
-        onReachTarget();
         return;
       }
 
@@ -592,33 +596,44 @@ App.Effects = (function() {
       const y = startY + dy * currentStep;
       const isLeft = currentStep % 2 === 0;
 
-      // 발자국 생성
+      // 큰 흰색 발자국 생성
       const paw = document.createElement('div');
       paw.className = 'cat-paw-print';
-      paw.innerHTML = '🐾';
       paw.style.cssText = `
         position: fixed;
-        left: ${x + (isLeft ? -10 : 10)}px;
+        left: ${x + (isLeft ? -25 : 25)}px;
         top: ${y}px;
-        font-size: 24px;
+        width: 60px;
+        height: 70px;
         opacity: 0;
         z-index: 9998;
         pointer-events: none;
-        transform: rotate(${fromLeft ? 90 : -90}deg) scaleX(${isLeft ? 1 : -1});
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        transform: rotate(${angle}deg) scaleX(${isLeft ? 1 : -1});
+      `;
+
+      // SVG 발자국 (흰색)
+      paw.innerHTML = `
+        <svg viewBox="0 0 60 70" fill="white" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));">
+          <!-- 메인 패드 -->
+          <ellipse cx="30" cy="45" rx="18" ry="20" opacity="0.9"/>
+          <!-- 발가락 패드들 -->
+          <ellipse cx="15" cy="18" rx="10" ry="12" opacity="0.9"/>
+          <ellipse cx="30" cy="10" rx="9" ry="11" opacity="0.9"/>
+          <ellipse cx="45" cy="18" rx="10" ry="12" opacity="0.9"/>
+        </svg>
       `;
       document.body.appendChild(paw);
 
-      // 발자국 나타났다 사라지기
+      // 발자국 나타났다 천천히 사라지기
       gsap.to(paw, {
-        opacity: 0.7,
-        duration: 0.15,
+        opacity: 0.8,
+        duration: 0.1,
         ease: 'power2.out',
         onComplete: () => {
           gsap.to(paw, {
             opacity: 0,
-            duration: 2,
-            delay: 1,
+            duration: 3,
+            delay: 0.5,
             ease: 'power2.in',
             onComplete: () => paw.remove()
           });
@@ -626,92 +641,10 @@ App.Effects = (function() {
       });
 
       currentStep++;
-      setTimeout(createNextPaw, 250);
+      setTimeout(createNextPaw, 300);
     }
 
     createNextPaw();
-  }
-
-  /**
-   * 고양이 발로 카드 밀기
-   */
-  function createCatPawPush(targetCard, cardRect, fromLeft) {
-    // 고양이 발 생성
-    const paw = document.createElement('div');
-    paw.className = 'cat-paw';
-    paw.innerHTML = `
-      <div class="paw-arm">
-        <div class="paw-fur"></div>
-        <div class="paw-pad">
-          <div class="pad-main"></div>
-          <div class="pad-toe"></div>
-          <div class="pad-toe"></div>
-          <div class="pad-toe"></div>
-        </div>
-      </div>
-    `;
-
-    const pawX = fromLeft ? cardRect.left - 80 : cardRect.right + 20;
-    const pawY = cardRect.top + cardRect.height / 2 - 25;
-
-    paw.style.cssText = `
-      position: fixed;
-      left: ${pawX}px;
-      top: ${pawY}px;
-      z-index: 10000;
-      pointer-events: none;
-      transform: scaleX(${fromLeft ? 1 : -1});
-    `;
-    document.body.appendChild(paw);
-
-    // 발 등장 애니메이션
-    gsap.fromTo(paw,
-      { x: fromLeft ? -60 : 60, opacity: 0 },
-      {
-        x: 0,
-        opacity: 1,
-        duration: 0.3,
-        ease: 'power2.out',
-        onComplete: () => {
-          // 카드 밀기!
-          const pushDistance = fromLeft ? 40 : -40;
-
-          // 발이 카드를 미는 동작
-          gsap.to(paw, {
-            x: fromLeft ? 50 : -50,
-            duration: 0.2,
-            ease: 'power2.in',
-            onComplete: () => {
-              // 카드 흔들리고 밀리기
-              gsap.to(targetCard, {
-                x: pushDistance,
-                rotation: fromLeft ? 5 : -5,
-                duration: 0.15,
-                ease: 'power2.out',
-                onComplete: () => {
-                  // 카드 원래 위치로 복귀
-                  gsap.to(targetCard, {
-                    x: 0,
-                    rotation: 0,
-                    duration: 0.5,
-                    ease: 'elastic.out(1, 0.5)'
-                  });
-                }
-              });
-
-              // 발 빠르게 뺌
-              gsap.to(paw, {
-                x: fromLeft ? -80 : 80,
-                opacity: 0,
-                duration: 0.3,
-                ease: 'power2.in',
-                onComplete: () => paw.remove()
-              });
-            }
-          });
-        }
-      }
-    );
   }
 
   // ===== 카드 잠들기 시스템 =====
