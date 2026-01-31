@@ -171,6 +171,7 @@ App.Effects = (function() {
         meteor.remove();
         createImpactEffect(targetX, targetY);
         shakeCard(targetCard);
+        wakeUpCard(targetCard); // 유성 맞으면 잠에서 깨움
       }
     });
   }
