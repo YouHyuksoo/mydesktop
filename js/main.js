@@ -96,6 +96,7 @@ window.App = window.App || {};
           document.getElementById('loading-screen').style.display = 'none';
           App.UI.animateEntrance();
           App.Effects.startMeteorShower();
+          App.Effects.startUfoVisits();
         }
       });
     }, 500);
