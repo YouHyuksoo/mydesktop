@@ -425,14 +425,33 @@
       App.State.targetSpeed = 0;
     }, { passive: true });
 
-    // ===== 카드 레이아웃 전환 =====
-    document.getElementById('menu-card-layout').addEventListener('click', e => {
-      e.stopPropagation();
-      const newLayout = App.State.cardLayout === 'grid' ? 'carousel' : 'grid';
-      if (App.Carousel && App.Carousel.changeCardLayout) {
-        App.Carousel.changeCardLayout(newLayout);
+    // ===== 카드 레이아웃 토글 버튼 =====
+    const layoutToggleBtn = document.getElementById('layout-toggle-btn');
+    if (layoutToggleBtn) {
+      layoutToggleBtn.addEventListener('click', () => {
+        const newLayout = App.State.cardLayout === 'grid' ? 'carousel' : 'grid';
+        if (App.Carousel && App.Carousel.changeCardLayout) {
+          App.Carousel.changeCardLayout(newLayout);
+        }
+        updateLayoutToggleIcon();
+      });
+      // 초기 아이콘 설정
+      updateLayoutToggleIcon();
+    }
+
+    function updateLayoutToggleIcon() {
+      const gridIcon = document.getElementById('layout-icon-grid');
+      const carouselIcon = document.getElementById('layout-icon-carousel');
+      if (gridIcon && carouselIcon) {
+        if (App.State.cardLayout === 'grid') {
+          gridIcon.style.display = 'block';
+          carouselIcon.style.display = 'none';
+        } else {
+          gridIcon.style.display = 'none';
+          carouselIcon.style.display = 'block';
+        }
       }
-    });
+    }
 
     // ===== 추가 버튼 =====
     document.getElementById('add-btn').addEventListener('click', () => App.UI.openModal());
@@ -577,11 +596,30 @@
       }
     });
 
-    // ===== 공간 타입 전환 =====
-    document.getElementById('menu-space').addEventListener('click', e => {
-      e.stopPropagation();
-      changeSpaceType();
-    });
+    // ===== 공간 타입 토글 버튼 =====
+    const spaceToggleBtn = document.getElementById('space-toggle-btn');
+    if (spaceToggleBtn) {
+      spaceToggleBtn.addEventListener('click', () => {
+        changeSpaceType();
+        updateSpaceToggleIcon();
+      });
+      // 초기 아이콘 설정
+      updateSpaceToggleIcon();
+    }
+
+    function updateSpaceToggleIcon() {
+      const tunnelIcon = document.getElementById('space-icon-tunnel');
+      const warpIcon = document.getElementById('space-icon-warp');
+      if (tunnelIcon && warpIcon) {
+        if (App.State.spaceType === 'tunnel') {
+          tunnelIcon.style.display = 'block';
+          warpIcon.style.display = 'none';
+        } else {
+          tunnelIcon.style.display = 'none';
+          warpIcon.style.display = 'block';
+        }
+      }
+    }
 
     // ===== 터널 서브메뉴 =====
     document.getElementById('menu-tunnel').addEventListener('click', e => {

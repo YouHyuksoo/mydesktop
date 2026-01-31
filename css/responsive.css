@@ -129,6 +129,22 @@
     gap: 6px;
   }
 
+  #sidebar-toggles {
+    top: calc(50% + 90px);
+    left: 12px;
+    gap: 6px;
+  }
+
+  #sidebar-toggles button {
+    width: 30px;
+    height: 30px;
+  }
+
+  #sidebar-toggles button svg {
+    width: 16px;
+    height: 16px;
+  }
+
   .depth-dot {
     width: 10px;
     height: 10px;
