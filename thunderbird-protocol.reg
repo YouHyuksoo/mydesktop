@@ -1,0 +1,12 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\thunderbird]
+@="URL:Thunderbird"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\thunderbird\shell]
+
+[HKEY_CLASSES_ROOT\thunderbird\shell\open]
+
+[HKEY_CLASSES_ROOT\thunderbird\shell\open\command]
+@="\"C:\\Program Files\\Mozilla Thunderbird\\thunderbird.exe\""

@@ -27,7 +27,6 @@
     { id: 'tool-settings', title: '설정', icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>', action: 'openSettings' },
     { id: 'tool-categories', title: '카테고리', icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>', action: 'openCategories' },
     { id: 'tool-import', title: '가져오기', icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>', action: 'openImport' },
-    { id: 'tool-reset', title: '초기화', icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>', action: 'resetShortcuts' },
     { id: 'tool-theme', title: '테마', icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>', action: 'cycleTheme' }
   ];
 
@@ -283,7 +282,19 @@
         <div class="history-title">${item.title}</div>
         <div class="history-time">${timeAgo}</div>
       </div>
+      <button class="history-delete-btn" title="삭제">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+      </button>
     `;
+
+    // 삭제 버튼 클릭 이벤트
+    const deleteBtn = card.querySelector('.history-delete-btn');
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation(); // 카드 클릭 이벤트 방지
+      removeFromHistory(item.id, card);
+    });
 
     // 클릭 이벤트
     card.addEventListener('click', () => {
@@ -300,6 +311,42 @@
     );
 
     return card;
+  }
+
+  /**
+   * 히스토리에서 아이템 삭제
+   * @param {string} itemId - 삭제할 아이템 ID
+   * @param {HTMLElement} cardElement - 카드 DOM 요소
+   */
+  function removeFromHistory(itemId, cardElement) {
+    // 삭제 애니메이션
+    gsap.to(cardElement, {
+      opacity: 0,
+      x: -50,
+      scale: 0.8,
+      duration: 0.3,
+      ease: 'power2.in',
+      onComplete: () => {
+        // 히스토리 배열에서 제거
+        let history = App.State.laneData.left;
+        history = history.filter(item => item.id !== itemId);
+        App.State.laneData.left = history;
+        saveHistory(history);
+
+        // DOM에서 카드 제거
+        cardElement.remove();
+
+        // 히스토리가 비었으면 빈 메시지 표시
+        if (history.length === 0) {
+          renderHistoryLane();
+        }
+
+        // 토스트 메시지
+        if (App.showToast) {
+          App.showToast('삭제되었습니다');
+        }
+      }
+    });
   }
 
   /**
@@ -388,13 +435,6 @@
         break;
       case 'openImport':
         if (App.Bookmarks) App.Bookmarks.openImportModal();
-        break;
-      case 'resetShortcuts':
-        if (confirm('모든 바로가기를 초기화할까요?')) {
-          App.State.shortcuts = App.Storage.resetShortcuts();
-          App.Cards.renderCards();
-          App.showToast('초기화 완료!');
-        }
         break;
       case 'cycleTheme':
         const themes = ['gold', 'purple', 'cyan', 'pink', 'green', 'red', 'blue', 'white'];

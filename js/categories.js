@@ -217,9 +217,10 @@ App.Categories = (function() {
       // 삭제 버튼 이벤트
       const deleteBtn = item.querySelector('.category-delete-btn');
       if (deleteBtn) {
-        deleteBtn.addEventListener('click', (e) => {
+        deleteBtn.addEventListener('click', async (e) => {
           e.stopPropagation();
-          if (confirm(`"${cat.name}" 카테고리를 삭제할까요?\n해당 카테고리의 바로가기는 FAVORITES로 이동됩니다.`)) {
+          const confirmed = await App.showConfirm(`"${cat.name}" 카테고리를 삭제할까요?\n해당 카테고리의 바로가기는 FAVORITES로 이동됩니다.`, { title: '카테고리 삭제', danger: true });
+          if (confirmed) {
             remove(cat.id);
             renderManagerList();
             refreshUI();

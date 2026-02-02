@@ -143,9 +143,10 @@
     });
 
     // 삭제 버튼
-    card.querySelector('.delete-btn').addEventListener('click', (e) => {
+    card.querySelector('.delete-btn').addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (confirm('삭제할까요?')) {
+      const confirmed = await App.showConfirm('삭제할까요?', { title: '바로가기 삭제', danger: true });
+      if (confirmed) {
         App.state.shortcuts = App.state.shortcuts.filter(x => x.id !== shortcut.id);
         App.saveShortcuts();
         renderCards();
@@ -228,7 +229,10 @@
    */
   function renderAllCards() {
     const space = document.getElementById('cards-3d-space');
-    space.innerHTML = '';
+
+    // 레인 컨테이너 보존 (섹션 카드만 제거)
+    const sectionCards = space.querySelectorAll('.section-cards');
+    sectionCards.forEach(el => el.remove());
 
     const SECTIONS = getSections();
     const isCarousel = App.state.cardLayout === 'carousel';
@@ -274,6 +278,27 @@
         App.Events.updateGridScrollButtons();
       }
     }, 100);
+
+    // 레인 컨테이너가 없으면 다시 생성 (설정 변경 등으로 제거된 경우)
+    if (App.Lanes && App.Lanes.createLaneIndicator) {
+      // 레인 컨테이너 재생성
+      if (!document.getElementById('lane-left') || !document.getElementById('lane-right')) {
+        const laneLeft = document.createElement('div');
+        laneLeft.id = 'lane-left';
+        laneLeft.className = 'lane-container';
+        space.appendChild(laneLeft);
+
+        const laneRight = document.createElement('div');
+        laneRight.id = 'lane-right';
+        laneRight.className = 'lane-container';
+        space.appendChild(laneRight);
+      }
+
+      // 레인 화살표 인디케이터도 확인
+      if (!document.getElementById('lane-arrows')) {
+        App.Lanes.createLaneIndicator();
+      }
+    }
   }
 
   /**

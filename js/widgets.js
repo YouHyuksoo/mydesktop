@@ -124,13 +124,138 @@
     document.getElementById('memory-bar').style.width = percent + '%';
   }
 
+  /**
+   * 날씨 코드를 이모지로 변환
+   */
+  function getWeatherEmoji(code) {
+    const weatherEmojis = {
+      '113': '☀️',  // Sunny
+      '116': '⛅',  // Partly cloudy
+      '119': '☁️',  // Cloudy
+      '122': '☁️',  // Overcast
+      '143': '🌫️', // Mist
+      '176': '🌦️', // Patchy rain
+      '179': '🌨️', // Patchy snow
+      '182': '🌧️', // Patchy sleet
+      '185': '🌧️', // Patchy freezing drizzle
+      '200': '⛈️', // Thundery outbreaks
+      '227': '🌨️', // Blowing snow
+      '230': '❄️',  // Blizzard
+      '248': '🌫️', // Fog
+      '260': '🌫️', // Freezing fog
+      '263': '🌧️', // Patchy light drizzle
+      '266': '🌧️', // Light drizzle
+      '281': '🌧️', // Freezing drizzle
+      '284': '🌧️', // Heavy freezing drizzle
+      '293': '🌧️', // Patchy light rain
+      '296': '🌧️', // Light rain
+      '299': '🌧️', // Moderate rain at times
+      '302': '🌧️', // Moderate rain
+      '305': '🌧️', // Heavy rain at times
+      '308': '🌧️', // Heavy rain
+      '311': '🌧️', // Light freezing rain
+      '314': '🌧️', // Moderate or heavy freezing rain
+      '317': '🌧️', // Light sleet
+      '320': '🌧️', // Moderate or heavy sleet
+      '323': '🌨️', // Patchy light snow
+      '326': '🌨️', // Light snow
+      '329': '🌨️', // Patchy moderate snow
+      '332': '🌨️', // Moderate snow
+      '335': '🌨️', // Patchy heavy snow
+      '338': '❄️',  // Heavy snow
+      '350': '🌧️', // Ice pellets
+      '353': '🌧️', // Light rain shower
+      '356': '🌧️', // Moderate or heavy rain shower
+      '359': '🌧️', // Torrential rain shower
+      '362': '🌧️', // Light sleet showers
+      '365': '🌧️', // Moderate or heavy sleet showers
+      '368': '🌨️', // Light snow showers
+      '371': '🌨️', // Moderate or heavy snow showers
+      '374': '🌧️', // Light showers of ice pellets
+      '377': '🌧️', // Moderate or heavy showers of ice pellets
+      '386': '⛈️', // Patchy light rain with thunder
+      '389': '⛈️', // Moderate or heavy rain with thunder
+      '392': '⛈️', // Patchy light snow with thunder
+      '395': '⛈️'  // Moderate or heavy snow with thunder
+    };
+    return weatherEmojis[code] || '🌤️';
+  }
+
+  /**
+   * 날씨 업데이트 (wttr.in API 사용)
+   */
+  function updateWeather() {
+    // 저장된 위치 또는 기본값 사용
+    const savedLocation = localStorage.getItem('mydesktop-weather-location') || 'Seoul';
+
+    fetch(`https://wttr.in/${encodeURIComponent(savedLocation)}?format=j1`)
+      .then(res => res.json())
+      .then(data => {
+        const current = data.current_condition[0];
+        const location = data.nearest_area[0];
+
+        // 온도
+        document.getElementById('weather-temp').textContent = current.temp_C + '°';
+
+        // 날씨 아이콘
+        const weatherCode = current.weatherCode;
+        document.getElementById('weather-icon').textContent = getWeatherEmoji(weatherCode);
+
+        // 날씨 설명
+        const desc = current.weatherDesc[0].value;
+        document.getElementById('weather-desc').textContent = desc;
+
+        // 위치
+        const city = location.areaName[0].value;
+        document.getElementById('weather-location').textContent = city;
+      })
+      .catch(err => {
+        console.error('Weather fetch error:', err);
+        document.getElementById('weather-desc').textContent = '날씨 로드 실패';
+      });
+  }
+
+  /**
+   * 날씨 위젯 초기화
+   */
+  function initWeather() {
+    updateWeather();
+    // 30분마다 업데이트
+    setInterval(updateWeather, 30 * 60 * 1000);
+
+    // 클릭해서 도시 변경
+    const weatherWidget = document.getElementById('weather-widget');
+    if (weatherWidget) {
+      weatherWidget.addEventListener('click', changeWeatherLocation);
+    }
+  }
+
+  /**
+   * 날씨 도시 변경
+   */
+  async function changeWeatherLocation() {
+    const currentLocation = localStorage.getItem('mydesktop-weather-location') || 'Seoul';
+    const newLocation = await App.showPrompt('날씨를 확인할 도시를 입력하세요:\n(영문 도시명 권장: Seoul, Busan, Tokyo, NewYork 등)', currentLocation, { title: '날씨 위치 변경', placeholder: 'Seoul' });
+
+    if (newLocation && newLocation.trim()) {
+      localStorage.setItem('mydesktop-weather-location', newLocation.trim());
+      document.getElementById('weather-desc').textContent = '로딩 중...';
+      updateWeather();
+      if (App.showToast) {
+        App.showToast(`날씨 위치: ${newLocation.trim()}`);
+      }
+    }
+  }
+
   // App.Widgets로 export
   App.Widgets = {
     updateClock: updateClock,
     initSystemInfo: initSystemInfo,
     updateNetwork: updateNetwork,
     updateBattery: updateBattery,
-    updateMemory: updateMemory
+    updateMemory: updateMemory,
+    initWeather: initWeather,
+    updateWeather: updateWeather
   };
 
 })();

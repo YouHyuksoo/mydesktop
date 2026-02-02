@@ -62,6 +62,7 @@ window.App = window.App || {};
     App.Widgets.updateClock();
     setInterval(App.Widgets.updateClock, 1000);
     App.Widgets.initSystemInfo();
+    App.Widgets.initWeather();
 
     // 북마크 드래그앤드롭 초기화
     if (App.Bookmarks) {
@@ -77,7 +78,6 @@ window.App = window.App || {};
     // 메뉴 상태 업데이트
     App.UI.updateSpaceMenu();
     App.UI.updateTunnelMenu();
-    App.UI.updateIconColorLabel();
     App.UI.updateCardStyleMenu();
     App.UI.updateCardLayoutLabel();
 
@@ -100,6 +100,11 @@ window.App = window.App || {};
           App.Effects.startCardSleepSystem();
           App.Effects.startCrowAttacks();
           App.Effects.startCatPaws();
+
+          // URL 파라미터로 전달된 바로가기 처리
+          if (App.Events && App.Events.handleUrlParams) {
+            App.Events.handleUrlParams();
+          }
         }
       });
     }, 500);

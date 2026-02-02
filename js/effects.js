@@ -684,7 +684,7 @@ App.Effects = (function() {
   }
 
   // ===== 카드 잠들기 시스템 =====
-  const SLEEP_TIMEOUT = 30000; // 30초
+  const SLEEP_TIMEOUT = 600000; // 10분
   const sleepTimers = new Map(); // 카드별 타이머 저장
 
   /**

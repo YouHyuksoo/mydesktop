@@ -136,8 +136,9 @@
   /**
    * 바로가기 삭제
    */
-  function deleteShortcut(id) {
-    if (confirm('삭제할까요?')) {
+  async function deleteShortcut(id) {
+    const confirmed = await App.showConfirm('삭제할까요?', { title: '바로가기 삭제', danger: true });
+    if (confirmed) {
       App.State.shortcuts = App.State.shortcuts.filter(x => x.id !== id);
       App.saveShortcuts();
       App.Cards.renderCards();
@@ -147,28 +148,245 @@
   }
 
   /**
-   * 프로토콜 URL 복사
+   * 프로토콜 핸들러 모달 열기
    */
-  function copyProtocolUrl() {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url).then(() => {
-      App.showToast('URL 복사됨!');
-    }).catch(() => {
-      App.showToast('복사 실패');
-    });
+  function openProtocolModal() {
     App.UI.hideSettingsMenu();
+
+    const urlInput = document.getElementById('protocol-base-url');
+    const bookmarkletContainer = document.getElementById('bookmarklet-container');
+
+    // 저장된 URL 불러오기
+    const savedUrl = localStorage.getItem('mydesktop-protocol-url') || '';
+    urlInput.value = savedUrl;
+
+    // 현재 페이지가 http/https면 자동으로 채우기
+    if (!savedUrl && window.location.protocol.startsWith('http')) {
+      urlInput.value = window.location.origin + window.location.pathname;
+    }
+
+    // URL이 있으면 북마클릿 표시
+    if (urlInput.value && urlInput.value.startsWith('http')) {
+      updateBookmarklet(urlInput.value);
+      bookmarkletContainer.style.display = 'block';
+    } else {
+      bookmarkletContainer.style.display = 'none';
+    }
+
+    // 모달 열기
+    document.getElementById('protocol-modal').classList.add('active');
   }
 
   /**
-   * 바로가기 초기화
+   * 북마클릿 코드 업데이트
    */
-  function resetShortcuts() {
-    if (confirm('모든 바로가기를 초기화할까요?')) {
-      App.State.shortcuts = App.Storage.resetShortcuts();
-      App.Cards.renderCards();
-      App.showToast('초기화 완료!');
+  function updateBookmarklet(baseUrl) {
+    // URL 끝에 슬래시 없으면 추가
+    if (!baseUrl.endsWith('/') && !baseUrl.endsWith('.html')) {
+      baseUrl = baseUrl + '/';
     }
+
+    const bookmarkletCode = `javascript:(function(){window.open('${baseUrl}?add=1&url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title),'_blank')})();`;
+
+    const bookmarkletLink = document.getElementById('bookmarklet-link');
+    if (bookmarkletLink) {
+      bookmarkletLink.href = bookmarkletCode;
+      bookmarkletLink.dataset.code = bookmarkletCode;
+    }
+
+    // URL 저장
+    localStorage.setItem('mydesktop-protocol-url', baseUrl);
+  }
+
+  /**
+   * 북마클릿 코드 복사
+   */
+  function copyBookmarkletCode() {
+    const bookmarkletLink = document.getElementById('bookmarklet-link');
+    const code = bookmarkletLink.dataset.code;
+
+    if (code) {
+      navigator.clipboard.writeText(code).then(() => {
+        App.showToast('북마클릿 코드 복사됨!');
+      }).catch(async () => {
+        // fallback - 커스텀 모달 사용
+        await App.showAlert('클립보드 복사 실패. 아래 링크를 수동으로 북마크 바에 드래그하세요.', { title: '복사 실패' });
+      });
+    }
+  }
+
+  /**
+   * 프로토콜 핸들러 모달 닫기
+   */
+  function closeProtocolModal() {
+    document.getElementById('protocol-modal').classList.remove('active');
+  }
+
+  /**
+   * URL 파라미터로 전달된 바로가기 처리
+   */
+  function handleUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get('add') === '1') {
+      const url = params.get('url');
+      const title = params.get('title');
+
+      // URL 파라미터 제거 (히스토리 정리)
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      // 약간의 딜레이 후 모달 열기 (앱 초기화 완료 대기)
+      setTimeout(() => {
+        // 바로가기 추가 모달 열기
+        if (App.UI && App.UI.openAddModal) {
+          App.UI.openAddModal();
+        } else {
+          document.getElementById('shortcut-modal').classList.add('active');
+          document.getElementById('modal-title').textContent = 'Add Shortcut';
+          document.getElementById('modal-delete').style.display = 'none';
+        }
+
+        // 필드 채우기
+        if (url) {
+          document.getElementById('shortcut-url').value = decodeURIComponent(url);
+        }
+        if (title) {
+          document.getElementById('shortcut-title').value = decodeURIComponent(title);
+        }
+
+        // 아이콘 자동 추천 (도메인 기반)
+        if (url) {
+          try {
+            const domain = new URL(decodeURIComponent(url)).hostname.replace('www.', '');
+            const brandName = domain.split('.')[0];
+            document.getElementById('shortcut-icon').value = `si:${brandName}`;
+          } catch (e) {
+            // URL 파싱 실패시 무시
+          }
+        }
+
+        App.showToast('사이트 정보를 가져왔어요!');
+      }, 800);
+    }
+  }
+
+  // URL 파라미터 처리 함수를 외부에서 호출할 수 있도록 export
+  App.Events = App.Events || {};
+  App.Events.handleUrlParams = handleUrlParams;
+
+  /**
+   * 데이터 내보내기 (JSON 파일 다운로드)
+   */
+  function exportData() {
     App.UI.hideSettingsMenu();
+
+    const data = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      shortcuts: App.State.shortcuts,
+      categories: App.Storage.loadCategories ? App.Storage.loadCategories() : [],
+      settings: {
+        tunnelShape: App.State.tunnelShape,
+        glowTheme: App.State.glowTheme,
+        iconColorMode: App.State.iconColorMode,
+        cardStyle: App.State.cardStyle,
+        spaceType: App.State.spaceType,
+        cardLayout: App.State.cardLayout
+      },
+      history: JSON.parse(localStorage.getItem('mydesktop-history') || '[]')
+    };
+
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mydesktop-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    App.showToast('데이터 내보내기 완료!');
+  }
+
+  /**
+   * 데이터 가져오기 (JSON 파일 복원)
+   */
+  function importData() {
+    App.UI.hideSettingsMenu();
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+
+          // 버전 확인
+          if (!data.version) {
+            App.showToast('잘못된 백업 파일입니다');
+            return;
+          }
+
+          // 확인 메시지
+          const confirmed = await App.showConfirm('현재 데이터를 백업 파일로 덮어쓸까요?\n(기존 데이터는 사라집니다)', { title: '데이터 가져오기', danger: true });
+          if (!confirmed) {
+            return;
+          }
+
+          // 데이터 복원
+          if (data.shortcuts) {
+            App.State.shortcuts = data.shortcuts;
+            App.Storage.saveShortcuts(data.shortcuts);
+          }
+
+          if (data.categories && App.Storage.saveCategories) {
+            App.Storage.saveCategories(data.categories);
+            if (App.Categories) App.Categories.load();
+          }
+
+          if (data.settings) {
+            App.State.tunnelShape = data.settings.tunnelShape || 'triangle';
+            App.State.glowTheme = data.settings.glowTheme || 'gold';
+            App.State.iconColorMode = data.settings.iconColorMode || 'brand';
+            App.State.cardStyle = data.settings.cardStyle || 'glass';
+            App.State.spaceType = data.settings.spaceType || 'tunnel';
+            App.State.cardLayout = data.settings.cardLayout || 'carousel';
+            App.saveSettings();
+          }
+
+          if (data.history) {
+            localStorage.setItem('mydesktop-history', JSON.stringify(data.history));
+            if (App.State.laneData) {
+              App.State.laneData.left = data.history;
+            }
+          }
+
+          // UI 새로고침
+          App.Cards.renderCards();
+          App.UI.applyGlowTheme(App.State.glowTheme);
+          if (App.Categories) App.Categories.updateCategorySelect();
+
+          App.showToast('데이터 가져오기 완료!');
+
+        } catch (err) {
+          console.error('Import error:', err);
+          App.showToast('파일 읽기 실패');
+        }
+      };
+
+      reader.readAsText(file);
+    };
+
+    input.click();
   }
 
   /**
@@ -178,9 +396,7 @@
     App.State.iconColorMode = App.State.iconColorMode === 'brand' ? 'white' : 'brand';
     App.saveSettings();
     App.Cards.renderCards();
-    App.UI.updateIconColorLabel();
     App.showToast(App.State.iconColorMode === 'brand' ? '🎨 브랜드 색상' : '⚪ 흰색 아이콘');
-    App.UI.hideSettingsMenu();
   }
 
   /**
@@ -479,9 +695,7 @@
         deleteShortcut(App.State.editingId);
       }
     });
-    document.getElementById('shortcut-modal').addEventListener('click', e => {
-      if (e.target.classList.contains('modal-overlay')) App.UI.closeModal();
-    });
+    // 바로가기 모달은 바깥 클릭으로 닫히지 않음 (취소/저장 버튼만 사용)
 
     // ===== 컨텍스트 메뉴 =====
     document.getElementById('ctx-edit').addEventListener('click', () => {
@@ -554,14 +768,70 @@
       App.UI.toggleSettingsMenu();
     });
     document.getElementById('menu-protocol').addEventListener('click', () => {
-      copyProtocolUrl();
+      openProtocolModal();
     });
-    document.getElementById('menu-reset').addEventListener('click', () => {
-      resetShortcuts();
+
+    // 데이터 내보내기/가져오기
+    document.getElementById('menu-export').addEventListener('click', () => {
+      exportData();
     });
-    document.getElementById('menu-icon-color').addEventListener('click', () => {
-      toggleIconColor();
+    document.getElementById('menu-restore').addEventListener('click', () => {
+      importData();
     });
+
+    // 프로토콜 모달 닫기
+    document.getElementById('protocol-modal-close').addEventListener('click', () => {
+      closeProtocolModal();
+    });
+    document.getElementById('protocol-modal').addEventListener('click', e => {
+      if (e.target.classList.contains('modal-overlay')) {
+        closeProtocolModal();
+      }
+    });
+
+    // 프로토콜 URL 입력 변경 시 북마클릿 업데이트
+    document.getElementById('protocol-base-url').addEventListener('input', e => {
+      const url = e.target.value.trim();
+      const bookmarkletContainer = document.getElementById('bookmarklet-container');
+
+      if (url && url.startsWith('http')) {
+        updateBookmarklet(url);
+        bookmarkletContainer.style.display = 'block';
+      } else {
+        bookmarkletContainer.style.display = 'none';
+      }
+    });
+
+    // 북마클릿 코드 복사 버튼
+    document.getElementById('copy-bookmarklet-btn').addEventListener('click', () => {
+      copyBookmarkletCode();
+    });
+
+    // ===== 아이콘 색상 토글 버튼 =====
+    const iconColorToggleBtn = document.getElementById('icon-color-toggle-btn');
+    if (iconColorToggleBtn) {
+      iconColorToggleBtn.addEventListener('click', () => {
+        toggleIconColor();
+        updateIconColorToggleBtn();
+      });
+      // 초기 아이콘 상태 설정
+      updateIconColorToggleBtn();
+    }
+
+    function updateIconColorToggleBtn() {
+      const brandIcon = document.getElementById('icon-color-brand');
+      const whiteIcon = document.getElementById('icon-color-white');
+
+      if (brandIcon && whiteIcon) {
+        if (App.State.iconColorMode === 'brand') {
+          brandIcon.style.display = 'block';
+          whiteIcon.style.display = 'none';
+        } else {
+          brandIcon.style.display = 'none';
+          whiteIcon.style.display = 'block';
+        }
+      }
+    }
 
     // ===== 카테고리 관리 =====
     document.getElementById('menu-categories').addEventListener('click', () => {

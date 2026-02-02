@@ -309,6 +309,147 @@
     }
   }
 
+  // ===== 범용 다이얼로그 =====
+  let dialogResolve = null;
+
+  /**
+   * 다이얼로그 모달 표시
+   * @param {Object} options - 옵션
+   * @returns {Promise} 결과 Promise
+   */
+  function showDialog(options) {
+    return new Promise((resolve) => {
+      dialogResolve = resolve;
+
+      const modal = document.getElementById('dialog-modal');
+      const title = document.getElementById('dialog-title');
+      const message = document.getElementById('dialog-message');
+      const inputField = document.getElementById('dialog-input-field');
+      const input = document.getElementById('dialog-input');
+      const cancelBtn = document.getElementById('dialog-cancel');
+      const confirmBtn = document.getElementById('dialog-confirm');
+
+      // 설정
+      title.textContent = options.title || '확인';
+      message.textContent = options.message || '';
+      confirmBtn.textContent = options.confirmText || '확인';
+      cancelBtn.textContent = options.cancelText || '취소';
+
+      // 타입에 따른 설정
+      if (options.type === 'prompt') {
+        inputField.style.display = 'block';
+        input.value = options.defaultValue || '';
+        input.placeholder = options.placeholder || '';
+        setTimeout(() => input.focus(), 100);
+      } else {
+        inputField.style.display = 'none';
+      }
+
+      if (options.type === 'alert') {
+        cancelBtn.style.display = 'none';
+      } else {
+        cancelBtn.style.display = 'block';
+      }
+
+      // 위험한 작업인 경우 버튼 색상 변경
+      if (options.danger) {
+        confirmBtn.classList.remove('primary');
+        confirmBtn.classList.add('danger');
+      } else {
+        confirmBtn.classList.remove('danger');
+        confirmBtn.classList.add('primary');
+      }
+
+      modal.classList.add('active');
+    });
+  }
+
+  /**
+   * 다이얼로그 닫기
+   */
+  function closeDialog(result) {
+    const modal = document.getElementById('dialog-modal');
+    modal.classList.remove('active');
+    if (dialogResolve) {
+      dialogResolve(result);
+      dialogResolve = null;
+    }
+  }
+
+  /**
+   * 확인 다이얼로그 (confirm 대체)
+   * @param {string} message - 메시지
+   * @param {Object} options - 추가 옵션
+   * @returns {Promise<boolean>}
+   */
+  function showConfirm(message, options = {}) {
+    return showDialog({
+      type: 'confirm',
+      title: options.title || '확인',
+      message: message,
+      confirmText: options.confirmText || '확인',
+      cancelText: options.cancelText || '취소',
+      danger: options.danger || false
+    });
+  }
+
+  /**
+   * 입력 다이얼로그 (prompt 대체)
+   * @param {string} message - 메시지
+   * @param {string} defaultValue - 기본값
+   * @param {Object} options - 추가 옵션
+   * @returns {Promise<string|null>}
+   */
+  function showPrompt(message, defaultValue = '', options = {}) {
+    return showDialog({
+      type: 'prompt',
+      title: options.title || '입력',
+      message: message,
+      defaultValue: defaultValue,
+      placeholder: options.placeholder || '',
+      confirmText: options.confirmText || '확인',
+      cancelText: options.cancelText || '취소'
+    });
+  }
+
+  /**
+   * 알림 다이얼로그 (alert 대체)
+   * @param {string} message - 메시지
+   * @param {Object} options - 추가 옵션
+   * @returns {Promise}
+   */
+  function showAlert(message, options = {}) {
+    return showDialog({
+      type: 'alert',
+      title: options.title || '알림',
+      message: message,
+      confirmText: options.confirmText || '확인'
+    });
+  }
+
+  // 다이얼로그 이벤트 리스너 초기화
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('dialog-confirm').addEventListener('click', () => {
+      const inputField = document.getElementById('dialog-input-field');
+      if (inputField.style.display !== 'none') {
+        closeDialog(document.getElementById('dialog-input').value);
+      } else {
+        closeDialog(true);
+      }
+    });
+
+    document.getElementById('dialog-cancel').addEventListener('click', () => {
+      closeDialog(null);
+    });
+
+    // Enter 키로 확인
+    document.getElementById('dialog-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        closeDialog(document.getElementById('dialog-input').value);
+      }
+    });
+  });
+
   // App.UI로 export
   App.UI = {
     openModal: openModal,
@@ -332,12 +473,20 @@
     animateEntrance: animateEntrance,
     updateCarouselUI: updateCarouselUI,
     hideCarouselUI: hideCarouselUI,
-    applyGlowTheme: applyGlowTheme
+    applyGlowTheme: applyGlowTheme,
+    showDialog: showDialog,
+    closeDialog: closeDialog,
+    showConfirm: showConfirm,
+    showPrompt: showPrompt,
+    showAlert: showAlert
   };
 
   // 편의 alias
   App.showToast = showToast;
   App.openModal = openModal;
   App.closeModal = closeModal;
+  App.showConfirm = showConfirm;
+  App.showPrompt = showPrompt;
+  App.showAlert = showAlert;
 
 })();

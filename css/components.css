@@ -828,6 +828,81 @@
   animation: batteryPulse 1s ease-in-out infinite;
 }
 
+/* ===== Weather Widget ===== */
+#weather-widget {
+  position: fixed;
+  top: 140px;
+  right: 20px;
+  background: rgba(255, 215, 0, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 16px;
+  padding: 12px 16px;
+  z-index: 200;
+  min-width: 120px;
+}
+
+.weather-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.weather-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.weather-temp {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.weather-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.weather-desc {
+  font-size: 11px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+.weather-location {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+#weather-widget {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#weather-widget:hover {
+  border-color: var(--accent);
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.weather-edit-hint {
+  font-size: 9px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  text-align: center;
+}
+
+#weather-widget:hover .weather-edit-hint {
+  opacity: 1;
+}
+
 /* ===== Bottom Buttons ===== */
 .bottom-buttons {
   position: fixed;
@@ -1938,6 +2013,7 @@
 
 /* 히스토리 카드 */
 .history-card {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 15px;
@@ -1996,6 +2072,49 @@
   font-size: 11px;
   color: var(--text-secondary);
   margin-top: 4px;
+}
+
+/* 히스토리 삭제 버튼 */
+.history-delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.history-delete-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: rgba(255, 255, 255, 0.6);
+  transition: all 0.2s ease;
+}
+
+.history-card:hover .history-delete-btn {
+  opacity: 1;
+}
+
+.history-delete-btn:hover {
+  background: rgba(255, 75, 75, 0.3);
+  transform: scale(1.1);
+}
+
+.history-delete-btn:hover svg {
+  fill: #ff4b4b;
+}
+
+.history-delete-btn:active {
+  transform: scale(0.9);
 }
 
 /* 도구 카드 */
@@ -2626,4 +2745,150 @@
 .cat-paw-print svg {
   width: 100%;
   height: 100%;
+}
+
+/* ===== Protocol Handler Modal (북마클릿 설정) ===== */
+.protocol-modal {
+  max-width: 450px;
+}
+
+.protocol-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.protocol-description strong {
+  color: var(--accent);
+}
+
+.bookmarklet-container {
+  text-align: center;
+  margin-bottom: 25px;
+  padding: 25px;
+  background: rgba(255, 215, 0, 0.05);
+  border-radius: 16px;
+  border: 1px dashed rgba(255, 215, 0, 0.3);
+}
+
+.bookmarklet-btn {
+  display: inline-block;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  color: #000;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 12px;
+  text-decoration: none;
+  cursor: grab;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
+}
+
+.bookmarklet-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 30px rgba(255, 215, 0, 0.5);
+}
+
+.bookmarklet-btn:active {
+  cursor: grabbing;
+  transform: scale(0.98);
+}
+
+.bookmarklet-hint {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--accent);
+  animation: hintBounce 1.5s ease-in-out infinite;
+}
+
+@keyframes hintBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.protocol-usage {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.protocol-usage h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.protocol-usage ol {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.protocol-usage li {
+  margin-bottom: 4px;
+}
+
+.protocol-usage li::marker {
+  color: var(--accent);
+}
+
+/* ===== Dialog Modal ===== */
+.dialog-modal {
+  max-width: 380px;
+}
+
+.dialog-message {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 20px;
+  white-space: pre-line;
+}
+
+.dialog-input-field {
+  margin-bottom: 20px;
+}
+
+.dialog-input-field input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 215, 0, 0.05);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.dialog-input-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.protocol-url-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.bookmarklet-copy {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.bookmarklet-copy small {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
 }
