@@ -990,6 +990,25 @@
 
     // ===== 그리드 스크롤 버튼 =====
     initGridScrollControls();
+
+    // ===== 이스터에그 테스트 버튼 =====
+    const dragonTestBtn = document.getElementById('dragon-test-btn');
+    if (dragonTestBtn) {
+      dragonTestBtn.addEventListener('click', () => {
+        if (App.Effects && App.Effects.createDragonAttack) {
+          App.Effects.createDragonAttack();
+        }
+      });
+    }
+
+    const wolfTestBtn = document.getElementById('wolf-test-btn');
+    if (wolfTestBtn) {
+      wolfTestBtn.addEventListener('click', () => {
+        if (App.Effects && App.Effects.createWolfAppear) {
+          App.Effects.createWolfAppear();
+        }
+      });
+    }
   }
 
   /**

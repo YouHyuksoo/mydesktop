@@ -100,6 +100,7 @@ window.App = window.App || {};
           App.Effects.startCardSleepSystem();
           App.Effects.startCrowAttacks();
           App.Effects.startCatPaws();
+          App.Effects.startDragonAttacks();
 
           // URL 파라미터로 전달된 바로가기 처리
           if (App.Events && App.Events.handleUrlParams) {
