@@ -1,0 +1,49 @@
+/**
+ * @file css/components/buttons.css
+ * @description Buttons 스타일
+ */
+
+/* ===== Bottom Buttons ===== */
+.bottom-buttons {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  display: flex;
+  gap: 12px;
+  z-index: 200;
+}
+
+.floating-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 4px 30px var(--card-glow);
+  transition: all 0.3s ease;
+}
+
+#add-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  color: #000;
+  font-size: 28px;
+}
+
+#add-btn:hover {
+  transform: scale(1.1) rotate(90deg);
+}
+
+#settings-btn {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: var(--accent);
+}
+
+#settings-btn:hover {
+  transform: scale(1.1);
+  background: rgba(255, 215, 0, 0.2);
+}

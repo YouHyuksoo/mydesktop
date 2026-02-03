@@ -1,0 +1,85 @@
+/**
+ * @file css/components/effects.css
+ * @description Effects 스타일
+ */
+
+/* ===== Click Ripple Effect ===== */
+.click-ripple {
+  position: fixed;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0.8;
+  z-index: 5;
+  animation: rippleExpand 1s ease-out forwards;
+}
+
+.click-burst {
+  position: fixed;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.burst-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent);
+}
+
+/* ===== Meteor Effect ===== */
+.meteor {
+  position: fixed;
+  pointer-events: none;
+  z-index: 15;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow:
+    0 0 10px var(--accent),
+    0 0 20px var(--accent),
+    0 0 40px var(--accent);
+}
+
+.meteor::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  transform: translateY(-50%);
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(to left, var(--accent), transparent);
+  border-radius: 2px;
+}
+
+.meteor::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  transform: translateY(-50%);
+  width: 150px;
+  height: 1px;
+  background: linear-gradient(to left, var(--accent-secondary), transparent);
+  opacity: 0.5;
+}
+
+.impact-spark {
+  position: fixed;
+  pointer-events: none;
+  z-index: 16;
+}
+
+.spark-particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--accent);
+}

@@ -1,0 +1,40 @@
+/**
+ * @file css/components/index.css
+ * @description UI 컴포넌트 스타일 통합 파일
+ *
+ * 초보자 가이드:
+ * 1. 이 파일은 모든 컴포넌트 CSS를 @import로 통합
+ * 2. 순서가 중요할 수 있으므로 변경 시 주의
+ */
+
+/* Core Components */
+@import url('section-info.css');
+@import url('search.css');
+@import url('cards.css');
+@import url('depth-indicator.css');
+@import url('grid-scroll.css');
+
+/* Widgets & Controls */
+@import url('widgets.css');
+@import url('buttons.css');
+@import url('sidebar-toggles.css');
+
+/* Menus */
+@import url('menus.css');
+@import url('context-menu.css');
+
+/* Modals */
+@import url('modals.css');
+
+/* Layout */
+@import url('lanes.css');
+
+/* Effects */
+@import url('effects.css');
+@import url('toast.css');
+
+/* Easter Eggs & Creatures */
+@import url('creatures.css');
+@import url('dragon.css');
+@import url('meteor-impact.css');
+@import url('easter-buttons.css');

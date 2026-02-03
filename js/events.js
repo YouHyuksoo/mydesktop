@@ -1009,6 +1009,15 @@
         }
       });
     }
+
+    const meteorTestBtn = document.getElementById('meteor-test-btn');
+    if (meteorTestBtn) {
+      meteorTestBtn.addEventListener('click', () => {
+        if (App.Effects && App.Effects.createMeteorImpact) {
+          App.Effects.createMeteorImpact();
+        }
+      });
+    }
   }
 
   /**

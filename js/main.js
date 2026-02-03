@@ -95,12 +95,11 @@ window.App = window.App || {};
         onComplete: () => {
           document.getElementById('loading-screen').style.display = 'none';
           App.UI.animateEntrance();
-          App.Effects.startMeteorShower();
-          App.Effects.startUfoVisits();
-          App.Effects.startCardSleepSystem();
-          App.Effects.startCrowAttacks();
-          App.Effects.startCatPaws();
-          App.Effects.startDragonAttacks();
+
+          // 모든 이펙트 시스템 초기화 (분리된 모듈 사용)
+          if (App.Effects && App.Effects.init) {
+            App.Effects.init();
+          }
 
           // URL 파라미터로 전달된 바로가기 처리
           if (App.Events && App.Events.handleUrlParams) {

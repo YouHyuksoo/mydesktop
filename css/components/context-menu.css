@@ -1,0 +1,36 @@
+/**
+ * @file css/components/context-menu.css
+ * @description Context Menu 스타일
+ */
+
+/* ===== Context Menu ===== */
+#context-menu {
+  position: fixed;
+  background: rgba(10, 10, 15, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 12px;
+  padding: 8px 0;
+  min-width: 150px;
+  z-index: 2000;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.9);
+  transition: all 0.2s ease;
+}
+
+#context-menu.active {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+.context-item {
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.context-item:hover { background: rgba(255, 215, 0, 0.1); }
+.context-item.danger { color: #ff4757; }

@@ -1,0 +1,31 @@
+/**
+ * @file css/components/section-info.css
+ * @description Section Info 스타일
+ */
+
+/* Section Info styles */
+/* ===== Section Info ===== */
+#section-info {
+  position: fixed;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 200;
+}
+
+#section-title {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--accent);
+  text-shadow: 0 0 30px var(--card-glow), 0 0 60px var(--card-glow);
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+#section-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  letter-spacing: 4px;
+}

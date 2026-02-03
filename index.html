@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/animations.css">
-  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/components/index.css">
   <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
@@ -71,6 +71,9 @@
     </button>
     <button class="easter-btn" id="wolf-test-btn" title="개새 소환">
       🐺
+    </button>
+    <button class="easter-btn" id="meteor-test-btn" title="유성 충돌">
+      ☄️
     </button>
   </div>
 
@@ -267,6 +270,10 @@
       <span class="style-preview apple-preview"></span>
       <span>애플</span>
     </div>
+    <div class="card-style-option" data-style="luxury">
+      <span class="style-preview luxury-preview"></span>
+      <span>럭셔리</span>
+    </div>
   </div>
 
   <div id="toast">복사됨!</div>
@@ -437,16 +444,44 @@
   <script src="js/storage.js"></script>
   <script src="js/categories.js"></script>
   <script src="js/bookmarks.js"></script>
-  <script src="js/space.js"></script>
+
+  <!-- Space Modules (분리됨) -->
+  <script src="js/space/core.js"></script>
+  <script src="js/space/tunnel.js"></script>
+  <script src="js/space/warp.js"></script>
+  <script src="js/space/aurora.js"></script>
+  <script src="js/space/index.js"></script>
+
   <script src="js/cards.js"></script>
   <script src="js/carousel.js"></script>
   <script src="js/sections.js"></script>
   <script src="js/lanes.js"></script>
   <script src="js/widgets.js"></script>
   <script src="js/ui.js"></script>
-  <script src="js/effects.js"></script>
+
+  <!-- Effects Modules (분리됨) -->
+  <script src="js/effects/click-effects.js"></script>
+  <script src="js/effects/meteor.js"></script>
+  <script src="js/effects/crow.js"></script>
+  <script src="js/effects/cat-paws.js"></script>
+  <script src="js/effects/card-sleep.js"></script>
+  <script src="js/effects/ufo-alien.js"></script>
+  <script src="js/effects/star-flyby.js"></script>
+  <script src="js/effects/dragon.js"></script>
+  <script src="js/effects/wolf.js"></script>
+  <script src="js/effects/meteor-impact.js"></script>
+  <script src="js/effects/index.js"></script>
+
   <script src="js/search.js"></script>
-  <script src="js/events.js"></script>
+
+  <!-- Handler Modules (분리됨) -->
+  <script src="js/handlers/shortcut-crud.js"></script>
+  <script src="js/handlers/protocol-handler.js"></script>
+  <script src="js/handlers/data-io.js"></script>
+  <script src="js/handlers/settings-handler.js"></script>
+  <script src="js/handlers/grid-scroll.js"></script>
+  <script src="js/handlers/index.js"></script>
+
   <script src="js/main.js"></script>
 </body>
 </html>
