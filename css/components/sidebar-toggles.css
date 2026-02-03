@@ -47,7 +47,7 @@
   pointer-events: auto;
 }
 
-/* ===== Sidebar Toggles ===== */
+/* ===== Sidebar Toggles (데스크톱 - 메뉴 안에서 fixed) ===== */
 #sidebar-toggles {
   position: fixed;
   left: 20px;
@@ -56,6 +56,14 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* ===== Color Bar (데스크톱 - 메뉴 안에서 fixed) ===== */
+#left-sidebar-menus #color-bar {
+  position: fixed;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 #sidebar-toggles button {

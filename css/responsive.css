@@ -341,13 +341,29 @@
   }
 
   /* 왼쪽 사이드바 - 모바일에서 인디케이터로 토글 */
+  #left-sidebar-container {
+    display: flex;
+    align-items: center;
+    pointer-events: auto;
+  }
+
   #left-sidebar-indicator {
     display: flex;
+    position: relative;
+    z-index: 210;
+  }
+
+  /* 모바일에서 기존 fixed 메뉴 숨김 */
+  #color-bar,
+  #sidebar-toggles {
+    display: none !important;
   }
 
   #left-sidebar-menus {
     position: absolute;
     left: -150px;
+    top: 50%;
+    transform: translateY(-50%);
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
@@ -357,6 +373,9 @@
     padding: 15px;
     border: 1px solid rgba(255, 215, 0, 0.15);
     border-left: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
 
   #left-sidebar-container.menu-open #left-sidebar-menus {
@@ -365,11 +384,17 @@
     visibility: visible;
   }
 
-  #left-sidebar-menus #color-bar {
+  /* 메뉴 안의 컬러바/토글은 다시 표시 */
+  #left-sidebar-menus #color-bar,
+  #left-sidebar-menus #sidebar-toggles {
+    display: flex !important;
     position: relative;
     left: 0;
     top: 0;
     transform: none;
+  }
+
+  #left-sidebar-menus #color-bar {
     padding: 8px;
     flex-direction: row;
     flex-wrap: wrap;
@@ -397,7 +422,7 @@
 
   #left-sidebar-menus #sidebar-toggles {
     flex-direction: row;
-    margin-top: 10px;
+    margin-top: 0;
     gap: 6px;
   }
 
