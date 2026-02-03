@@ -3,30 +3,70 @@
  * @description Easter Buttons 스타일
  */
 
-/* ===== Easter Egg Test Buttons ===== */
-#easter-egg-buttons {
+/* ===== Easter Egg Container ===== */
+#easter-egg-container {
   position: fixed;
-  left: 30px;
-  top: 140px;
+  left: 20px;
+  top: 120px;
   z-index: 300;
+}
+
+/* 인디케이터 (평소 보임) */
+#easter-egg-indicator {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(10, 10, 15, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0.5;
+}
+
+#easter-egg-indicator:hover {
+  opacity: 1;
+  border-color: var(--accent);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+/* 버튼들 (평소 숨김, 호버 시 표시) */
+#easter-egg-buttons {
+  position: absolute;
+  left: 40px;
+  top: 0;
   display: flex;
   gap: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-10px);
+  transition: all 0.3s ease;
+}
+
+#easter-egg-container:hover #easter-egg-buttons {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
 }
 
 .easter-btn {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 1px solid rgba(255, 215, 0, 0.3);
   background: rgba(10, 10, 15, 0.7);
   backdrop-filter: blur(10px);
   cursor: pointer;
-  font-size: 20px;
+  font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  opacity: 0.6;
+  opacity: 0.8;
 }
 
 .easter-btn:hover {

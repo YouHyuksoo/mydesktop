@@ -339,4 +339,99 @@
     width: 16px;
     height: 16px;
   }
+
+  /* 왼쪽 사이드바 - 모바일에서 인디케이터로 토글 */
+  #left-sidebar-indicator {
+    display: flex;
+  }
+
+  #left-sidebar-menus {
+    position: absolute;
+    left: -150px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    background: rgba(10, 10, 15, 0.95);
+    backdrop-filter: blur(15px);
+    border-radius: 0 16px 16px 0;
+    padding: 15px;
+    border: 1px solid rgba(255, 215, 0, 0.15);
+    border-left: none;
+  }
+
+  #left-sidebar-container.menu-open #left-sidebar-menus {
+    left: 0;
+    opacity: 1;
+    visibility: visible;
+  }
+
+  #left-sidebar-menus #color-bar {
+    position: relative;
+    left: 0;
+    top: 0;
+    transform: none;
+    padding: 8px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100px;
+    background: transparent;
+    border: none;
+    backdrop-filter: none;
+  }
+
+  #left-sidebar-menus #color-bar #color-bar-label {
+    width: 100%;
+    writing-mode: horizontal-tb;
+    transform: none;
+    text-align: center;
+    margin-bottom: 5px;
+  }
+
+  #left-sidebar-menus #color-bar .color-bar-options {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  #left-sidebar-menus #sidebar-toggles {
+    flex-direction: row;
+    margin-top: 10px;
+    gap: 6px;
+  }
+
+  #left-sidebar-menus #sidebar-toggles button {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* 이스터에그 - 모바일에서 클릭으로 토글 */
+  #easter-egg-container {
+    top: 60px;
+    left: 10px;
+  }
+
+  #easter-egg-indicator {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  #easter-egg-buttons {
+    left: 35px;
+  }
+
+  .easter-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  /* 모바일에서 터치를 위해 컨테이너에 클래스 추가 시 버튼 표시 */
+  #easter-egg-container.show-buttons #easter-egg-buttons {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+  }
 }

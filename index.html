@@ -67,17 +67,20 @@
     <div class="date" id="clock-date">Loading...</div>
   </div>
 
-  <!-- 이스터에그 테스트 버튼 -->
-  <div id="easter-egg-buttons">
-    <button class="easter-btn" id="dragon-test-btn" title="드래곤 소환">
-      🐉
-    </button>
-    <button class="easter-btn" id="wolf-test-btn" title="개새 소환">
-      🐺
-    </button>
-    <button class="easter-btn" id="meteor-test-btn" title="유성 충돌">
-      ☄️
-    </button>
+  <!-- 이스터에그 테스트 버튼 (인디케이터 호버 시 표시) -->
+  <div id="easter-egg-container">
+    <div id="easter-egg-indicator" title="이스터에그">✨</div>
+    <div id="easter-egg-buttons">
+      <button class="easter-btn" id="dragon-test-btn" title="드래곤 소환">
+        🐉
+      </button>
+      <button class="easter-btn" id="wolf-test-btn" title="늑대 소환">
+        🐺
+      </button>
+      <button class="easter-btn" id="meteor-test-btn" title="유성 충돌">
+        ☄️
+      </button>
+    </div>
   </div>
 
   <div id="system-widget">
@@ -124,21 +127,29 @@
     <span>SCROLL TO TRAVEL</span>
   </div>
 
-  <div id="color-bar">
-    <span id="color-bar-label">Glow</span>
-    <div class="color-bar-options">
-      <button class="color-bar-btn gold active" data-theme="gold" title="Gold"></button>
-      <button class="color-bar-btn purple" data-theme="purple" title="Purple"></button>
-      <button class="color-bar-btn cyan" data-theme="cyan" title="Cyan"></button>
-      <button class="color-bar-btn pink" data-theme="pink" title="Pink"></button>
-      <button class="color-bar-btn green" data-theme="green" title="Green"></button>
-      <button class="color-bar-btn red" data-theme="red" title="Red"></button>
-      <button class="color-bar-btn blue" data-theme="blue" title="Blue"></button>
-      <button class="color-bar-btn white" data-theme="white" title="White"></button>
+  <!-- 왼쪽 사이드 메뉴 (모바일에서 인디케이터로 토글) -->
+  <div id="left-sidebar-container">
+    <div id="left-sidebar-indicator" title="메뉴 열기">
+      <span></span>
+      <span></span>
+      <span></span>
     </div>
-  </div>
+    <div id="left-sidebar-menus">
+      <div id="color-bar">
+        <span id="color-bar-label">Glow</span>
+        <div class="color-bar-options">
+          <button class="color-bar-btn gold active" data-theme="gold" title="Gold"></button>
+          <button class="color-bar-btn purple" data-theme="purple" title="Purple"></button>
+          <button class="color-bar-btn cyan" data-theme="cyan" title="Cyan"></button>
+          <button class="color-bar-btn pink" data-theme="pink" title="Pink"></button>
+          <button class="color-bar-btn green" data-theme="green" title="Green"></button>
+          <button class="color-bar-btn red" data-theme="red" title="Red"></button>
+          <button class="color-bar-btn blue" data-theme="blue" title="Blue"></button>
+          <button class="color-bar-btn white" data-theme="white" title="White"></button>
+        </div>
+      </div>
 
-  <div id="sidebar-toggles">
+      <div id="sidebar-toggles">
     <button id="layout-toggle-btn" title="그리드/캐러셀 전환">
       <svg id="layout-icon-grid" viewBox="0 0 24 24" fill="currentColor">
         <path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/>
@@ -166,6 +177,8 @@
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
       </svg>
     </button>
+      </div>
+    </div>
   </div>
 
   <div class="bottom-buttons">

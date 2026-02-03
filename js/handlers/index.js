@@ -563,6 +563,41 @@ window.App = window.App || {};
         if (App.Effects && App.Effects.createMeteorImpact) App.Effects.createMeteorImpact();
       });
     }
+
+    // ===== 모바일 인디케이터 토글 =====
+    // 왼쪽 사이드바 인디케이터
+    const leftSidebarIndicator = document.getElementById('left-sidebar-indicator');
+    const leftSidebarContainer = document.getElementById('left-sidebar-container');
+    if (leftSidebarIndicator && leftSidebarContainer) {
+      leftSidebarIndicator.addEventListener('click', e => {
+        e.stopPropagation();
+        leftSidebarContainer.classList.toggle('menu-open');
+      });
+
+      // 바깥 클릭 시 닫기
+      document.addEventListener('click', e => {
+        if (!e.target.closest('#left-sidebar-container')) {
+          leftSidebarContainer.classList.remove('menu-open');
+        }
+      });
+    }
+
+    // 이스터에그 인디케이터 (모바일 터치용)
+    const easterEggIndicator = document.getElementById('easter-egg-indicator');
+    const easterEggContainer = document.getElementById('easter-egg-container');
+    if (easterEggIndicator && easterEggContainer) {
+      easterEggIndicator.addEventListener('click', e => {
+        e.stopPropagation();
+        easterEggContainer.classList.toggle('show-buttons');
+      });
+
+      // 바깥 클릭 시 닫기
+      document.addEventListener('click', e => {
+        if (!e.target.closest('#easter-egg-container')) {
+          easterEggContainer.classList.remove('show-buttons');
+        }
+      });
+    }
   }
 
   // App.Events로 export (기존 API 유지)

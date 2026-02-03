@@ -3,6 +3,50 @@
  * @description Sidebar Toggles 스타일
  */
 
+/* ===== Left Sidebar Container (데스크톱) ===== */
+#left-sidebar-container {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 200;
+  pointer-events: none;
+}
+
+/* 인디케이터 (모바일에서만 표시) */
+#left-sidebar-indicator {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 8px;
+  background: rgba(10, 10, 15, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-left: none;
+  border-radius: 0 10px 10px 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+}
+
+#left-sidebar-indicator span {
+  width: 3px;
+  height: 12px;
+  background: var(--accent);
+  border-radius: 2px;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
+#left-sidebar-indicator:hover span,
+#left-sidebar-container.menu-open #left-sidebar-indicator span {
+  opacity: 1;
+}
+
+#left-sidebar-menus {
+  pointer-events: auto;
+}
+
 /* ===== Sidebar Toggles ===== */
 #sidebar-toggles {
   position: fixed;
