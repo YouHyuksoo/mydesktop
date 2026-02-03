@@ -20,6 +20,34 @@
     right: 15px;
   }
 
+  #weather-widget {
+    top: auto;
+    bottom: 80px;
+    right: 15px;
+    padding: 8px 12px;
+    min-width: 100px;
+  }
+
+  #weather-widget .weather-icon {
+    font-size: 22px;
+  }
+
+  #weather-widget .weather-temp {
+    font-size: 18px;
+  }
+
+  #weather-widget .weather-desc {
+    font-size: 10px;
+  }
+
+  #weather-widget .weather-location {
+    font-size: 9px;
+  }
+
+  #weather-widget .weather-edit-hint {
+    display: none;
+  }
+
   #clock-widget {
     padding: 8px 12px;
   }
@@ -142,6 +170,32 @@
   }
 
   #system-widget {
+    display: none;
+  }
+
+  /* 날씨 위젯 - 우상단 작게 */
+  #weather-widget {
+    top: 10px;
+    right: 10px;
+    bottom: auto;
+    padding: 6px 10px;
+    min-width: auto;
+    border-radius: 12px;
+  }
+
+  #weather-widget .weather-main {
+    margin-bottom: 0;
+  }
+
+  #weather-widget .weather-icon {
+    font-size: 18px;
+  }
+
+  #weather-widget .weather-temp {
+    font-size: 14px;
+  }
+
+  #weather-widget .weather-info {
     display: none;
   }
 
